@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+  <defs>
+    <linearGradient id="hero3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c2d12;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#dc2626;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f87171;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#hero3)"/>
+  <text x="600" y="250" font-family="Arial" font-size="56" font-weight="bold" text-anchor="middle" fill="white">Pendidikan Akhlak Islami</text>
+  <text x="600" y="320" font-family="Arial" font-size="28" text-anchor="middle" fill="white" opacity="0.9">Membentuk Karakter Mulia Anak Muslim</text>
+  <text x="600" y="380" font-family="Arial" font-size="20" text-anchor="middle" fill="white" opacity="0.8">Pembelajaran Al-Quran dan akhlak yang terintegrasi</text>
+</svg>
