@@ -156,7 +156,7 @@ export default function HomePage() {
                 <Link href="#contact" className="block px-3 py-2 text-gray-700 hover:text-green-600">
                   Kontak
                 </Link>
-                <Link href="/auth/login" className="block px-3 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg mx-3 text-center">
+                <Link href="/admin/login" className="block px-3 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg mx-3 text-center">
                   Login
                 </Link>
               </div>

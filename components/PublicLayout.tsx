@@ -148,7 +148,7 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
                       Daftar
                     </Link>
                     <Link
-                      href="/auth/login"
+                      href="/admin/login"
                       className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
                     >
                       Masuk
@@ -250,7 +250,7 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
                         📝 Daftar
                       </Link>
                       <Link
-                        href="/auth/login"
+                        href="/admin/login"
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="block px-3 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-md text-center mx-3"
                       >

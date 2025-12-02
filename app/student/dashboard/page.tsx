@@ -38,7 +38,7 @@ export default function StudentDashboard() {
       // Check authentication first
       const authResponse = await fetch('/api/auth/me');
       if (!authResponse.ok) {
-        router.push('/auth/login');
+        router.push('/admin/login');
         return;
       }
 
@@ -118,7 +118,7 @@ export default function StudentDashboard() {
     } catch (error) {
       console.error('Error fetching student data:', error);
       setIsLoading(false);
-      router.push('/auth/login');
+      router.push('/admin/login');
     }
   };
 
