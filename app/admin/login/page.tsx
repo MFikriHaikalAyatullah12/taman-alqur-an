@@ -77,7 +77,7 @@ function AdminLoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-black mb-1">
                 Email
               </label>
               <input
@@ -85,13 +85,13 @@ function AdminLoginForm() {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-black"
                 placeholder="admin@example.com"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-black mb-1">
                 Password
               </label>
               <input
@@ -99,7 +99,7 @@ function AdminLoginForm() {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-black"
                 placeholder="Password"
               />
             </div>
@@ -125,7 +125,7 @@ function AdminLoginForm() {
           </form>
 
           <div className="mt-3 text-center">
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-black">
               Belum punya akun?{' '}
               <Link 
                 href="/admin/register" 
@@ -137,7 +137,7 @@ function AdminLoginForm() {
             <div className="border-t border-gray-200 pt-2 mt-2">
               <Link 
                 href="/" 
-                className="text-gray-500 hover:text-gray-700 text-xs"
+                className="text-black hover:text-gray-700 text-xs"
               >
                 ← Kembali ke Beranda
               </Link>

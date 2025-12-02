@@ -57,13 +57,13 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
   };
 
   const navigationItems = [
-    { href: '/', label: 'Beranda', icon: '🏠' },
-    { href: '/about', label: 'Tentang', icon: 'ℹ️' },
-    { href: '/programs', label: 'Program', icon: '📚' },
-    { href: '/teachers', label: 'Pengajar', icon: '👨‍🏫' },
-    { href: '/news', label: 'Berita', icon: '📰' },
-    { href: '/gallery', label: 'Galeri', icon: '🖼️' },
-    { href: '/contact', label: 'Kontak', icon: '📞' },
+    { href: '/', label: 'Beranda' },
+    { href: '/about', label: 'Tentang' },
+    { href: '/programs', label: 'Program' },
+    { href: '/teachers', label: 'Pengajar' },
+    { href: '/news', label: 'Berita' },
+    { href: '/gallery', label: 'Galeri' },
+    { href: '/contact', label: 'Kontak' },
   ];
 
   const isActive = (href: string) => currentPage === href;
@@ -97,7 +97,6 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
                       : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="mr-1.5">{item.icon}</span>
                   {item.label}
                 </Link>
               ))}
@@ -188,7 +187,6 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
                         : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
                     }`}
                   >
-                    <span className="mr-3">{item.icon}</span>
                     {item.label}
                   </Link>
                 ))}
@@ -215,7 +213,7 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="block px-3 py-2 text-blue-600 font-medium"
                       >
-                        🔧 Admin Panel
+                        Admin Panel
                       </Link>
                     )}
                     
@@ -225,7 +223,7 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="block px-3 py-2 text-green-600 font-medium"
                       >
-                        📊 Dashboard Santri
+                        Dashboard Santri
                       </Link>
                     )}
                     
@@ -236,7 +234,7 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
                       }}
                       className="block w-full text-left px-3 py-2 text-red-600 font-medium"
                     >
-                      🚪 Keluar
+                      Keluar
                     </button>
                   </div>
                 ) : (
@@ -247,14 +245,14 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="block px-3 py-2 text-green-600 font-medium border border-green-600 rounded-md text-center mx-3"
                       >
-                        📝 Daftar
+                        Daftar
                       </Link>
                       <Link
                         href="/admin/login"
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="block px-3 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-md text-center mx-3"
                       >
-                        🔑 Masuk
+                        Masuk
                       </Link>
                     </div>
                   )
@@ -289,17 +287,17 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
                 Memberikan pendidikan Al-Quran berkualitas untuk membentuk generasi yang berakhlak mulia dan berprestasi.
               </p>
               <div className="flex space-x-4">
-                <a href="#" className="text-gray-300 hover:text-green-400 transition-colors text-2xl">
-                  📘
+                <a href="#" className="text-gray-300 hover:text-green-400 transition-colors">
+                  Facebook
                 </a>
-                <a href="#" className="text-gray-300 hover:text-green-400 transition-colors text-2xl">
-                  📷
+                <a href="#" className="text-gray-300 hover:text-green-400 transition-colors">
+                  Instagram
                 </a>
-                <a href="#" className="text-gray-300 hover:text-green-400 transition-colors text-2xl">
-                  📹
+                <a href="#" className="text-gray-300 hover:text-green-400 transition-colors">
+                  YouTube
                 </a>
-                <a href="#" className="text-gray-300 hover:text-green-400 transition-colors text-2xl">
-                  💬
+                <a href="#" className="text-gray-300 hover:text-green-400 transition-colors">
+                  WhatsApp
                 </a>
               </div>
             </div>
@@ -331,16 +329,16 @@ export default function PublicLayout({ children, currentPage = '', showAuth = tr
           {/* Contact Info */}
           <div className="border-t border-gray-800 mt-8 pt-8">
             <div className="grid md:grid-cols-3 gap-6 text-sm">
-              <div className="flex items-center space-x-3">
-                <span className="text-green-400">📍</span>
+              <div className="flex items-start space-x-3">
+                <span className="text-green-400 font-semibold">Alamat:</span>
                 <span className="text-gray-300">Jl. Pendidikan No. 123, Jakarta Selatan</span>
               </div>
-              <div className="flex items-center space-x-3">
-                <span className="text-green-400">📞</span>
+              <div className="flex items-start space-x-3">
+                <span className="text-green-400 font-semibold">Telepon:</span>
                 <span className="text-gray-300">021-12345678</span>
               </div>
-              <div className="flex items-center space-x-3">
-                <span className="text-green-400">✉️</span>
+              <div className="flex items-start space-x-3">
+                <span className="text-green-400 font-semibold">Email:</span>
                 <span className="text-gray-300">info@tpqalhikmah.com</span>
               </div>
             </div>

@@ -89,7 +89,7 @@ export default function AdminRegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-black mb-1">
                 Nama Lengkap *
               </label>
               <input
@@ -98,13 +98,13 @@ export default function AdminRegisterPage() {
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-black"
                 placeholder="Nama lengkap"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-black mb-1">
                 Email *
               </label>
               <input
@@ -113,14 +113,14 @@ export default function AdminRegisterPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-black"
                 placeholder="email@example.com"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-black mb-1">
                   Password *
                 </label>
                 <input
@@ -129,12 +129,12 @@ export default function AdminRegisterPage() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900"
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-black"
                   placeholder="Min. 6"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-black mb-1">
                   Konfirmasi *
                 </label>
                 <input
@@ -143,7 +143,7 @@ export default function AdminRegisterPage() {
                   required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900"
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-black"
                   placeholder="Ulangi"
                 />
               </div>
@@ -170,7 +170,7 @@ export default function AdminRegisterPage() {
           </form>
 
           <div className="mt-3 text-center">
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-black">
               Sudah punya akun?{' '}
               <Link 
                 href="/admin/login" 
