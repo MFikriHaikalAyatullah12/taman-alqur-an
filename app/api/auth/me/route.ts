@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 const jwt = require('jsonwebtoken');
 const pool = require('@/lib/db');
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;

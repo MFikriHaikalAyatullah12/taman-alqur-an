@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 const jwt = require('jsonwebtoken');
 const pool = require('@/lib/db');
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 // Helper function untuk verifikasi admin token
 async function verifyAdminToken(request: NextRequest) {
   try {

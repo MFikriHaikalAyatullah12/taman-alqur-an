@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 const bcrypt = require('bcryptjs');
 const pool = require('@/lib/db');
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { name, email, password, phone, address } = await request.json();
