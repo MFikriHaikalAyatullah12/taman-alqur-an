@@ -2,252 +2,663 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
+import Image from 'next/image';
 
-export default function AdminTeachersPage() {
-  const [teachers, setTeachers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+interface Teacher {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  specialization: string;
+  experience_years: number;
+  education: string;
+  status: string;
+  bio: string;
+}
+
+interface AddModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (teacher: Teacher) => void;
+}
+
+interface EditModalProps {
+  teacher: Teacher | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (teacher: Teacher) => void;
+}
+
+const AddTeacherModal = ({ isOpen, onClose, onSave }: AddModalProps) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    specialization: '',
+    experience_years: 0,
+    education: '',
+    bio: ''
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch('/api/admin/teachers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        onSave(result.data);
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          specialization: '',
+          experience_years: 0,
+          education: '',
+          bio: ''
+        });
+        onClose();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Gagal menambahkan pengajar');
+      }
+    } catch (error) {
+      console.error('Error saving teacher:', error);
+      alert('Terjadi kesalahan');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Tambah Pengajar Baru</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nama *</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">No. Telepon</label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Spesialisasi</label>
+              <select
+                value={formData.specialization}
+                onChange={(e) => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              >
+                <option value="">Pilih Spesialisasi</option>
+                <option value="Tahfidz">Tahfidz</option>
+                <option value="Tilawah">Tilawah</option>
+                <option value="Tajwid">Tajwid</option>
+                <option value="Fiqh">Fiqh</option>
+                <option value="Akhlak">Akhlak</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Pengalaman (Tahun)</label>
+              <input
+                type="number"
+                value={formData.experience_years}
+                onChange={(e) => setFormData(prev => ({ ...prev, experience_years: parseInt(e.target.value) || 0 }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                min="0"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Pendidikan</label>
+              <input
+                type="text"
+                value={formData.education}
+                onChange={(e) => setFormData(prev => ({ ...prev, education: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                placeholder="Contoh: S1 Pendidikan Agama Islam"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Biografi</label>
+            <textarea
+              value={formData.bio}
+              onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              placeholder="Ceritakan tentang latar belakang dan keahlian pengajar..."
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+            >
+              {isSaving ? 'Menyimpan...' : 'Tambah Pengajar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const EditTeacherModal = ({ teacher, isOpen, onClose, onSave }: EditModalProps) => {
+  const [formData, setFormData] = useState<Partial<Teacher>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Load teachers data - untuk saat ini menggunakan data dummy
-    const dummyTeachers = [
-      {
-        id: 1,
-        name: 'Ustadz Ahmad Subhan',
-        email: 'ahmad@tpq.com',
-        phone: '081234567890',
-        specialization: 'Tahfidz Al-Quran',
-        experience_years: 8,
-        education: 'S1 Pendidikan Agama Islam',
-        status: 'active',
-        photo_url: '',
-        bio: 'Berpengalaman dalam mengajar tahfidz dengan metode yang mudah dipahami'
-      },
-      {
-        id: 2,
-        name: 'Ustadzah Siti Aminah',
-        email: 'siti@tpq.com',
-        phone: '081234567891',
-        specialization: 'Tajwid dan Qiraat',
-        experience_years: 5,
-        education: 'S1 Ilmu Al-Quran dan Tafsir',
-        status: 'active',
-        photo_url: '',
-        bio: 'Ahli dalam bidang tajwid dan qiraat dengan sertifikasi internasional'
-      },
-      {
-        id: 3,
-        name: 'Ustadz Muhammad Ridho',
-        email: 'ridho@tpq.com',
-        phone: '081234567892',
-        specialization: 'Fiqh dan Hadits',
-        experience_years: 12,
-        education: 'S2 Syariah',
-        status: 'active',
-        photo_url: '',
-        bio: 'Berpengalaman mengajar fiqh dan hadits untuk berbagai tingkatan'
-      }
-    ];
+    if (teacher) {
+      setFormData(teacher);
+    }
+  }, [teacher]);
 
-    setTeachers(dummyTeachers);
-    setIsLoading(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/teachers/${teacher?.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        onSave(result.data);
+        onClose();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Gagal mengupdate pengajar');
+      }
+    } catch (error) {
+      console.error('Error updating teacher:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!isOpen || !teacher) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Edit Pengajar</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nama *</label>
+              <input
+                type="text"
+                value={formData.name || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+              <input
+                type="email"
+                value={formData.email || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">No. Telepon</label>
+              <input
+                type="tel"
+                value={formData.phone || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Spesialisasi</label>
+              <select
+                value={formData.specialization || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              >
+                <option value="">Pilih Spesialisasi</option>
+                <option value="Tahfidz">Tahfidz</option>
+                <option value="Tilawah">Tilawah</option>
+                <option value="Tajwid">Tajwid</option>
+                <option value="Fiqh">Fiqh</option>
+                <option value="Akhlak">Akhlak</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Pengalaman (Tahun)</label>
+              <input
+                type="number"
+                value={formData.experience_years || 0}
+                onChange={(e) => setFormData(prev => ({ ...prev, experience_years: parseInt(e.target.value) || 0 }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                min="0"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Pendidikan</label>
+              <input
+                type="text"
+                value={formData.education || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, education: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                placeholder="Contoh: S1 Pendidikan Agama Islam"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select
+              value={formData.status || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            >
+              <option value="Aktif">Aktif</option>
+              <option value="Tidak Aktif">Tidak Aktif</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Biografi</label>
+            <textarea
+              value={formData.bio || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              placeholder="Ceritakan tentang latar belakang dan keahlian pengajar..."
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+            >
+              {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default function TeachersPage() {
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchTeachers();
   }, []);
 
-  const filteredTeachers = teachers.filter(teacher => {
-    const matchSearch = teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       teacher.specialization.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = filterStatus === 'all' || teacher.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+  const fetchTeachers = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch('/api/admin/teachers', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-  if (isLoading) {
-    return (
-      <AdminLayout currentPage="/admin/teachers">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-        </div>
-      </AdminLayout>
-    );
-  }
+      if (response.ok) {
+        const result = await response.json();
+        setTeachers(result.data || []);
+      } else {
+        console.error('Failed to fetch teachers');
+        // Fallback to mock data if API fails
+        setTeachers([
+          {
+            id: 1,
+            name: 'Ahmad Rahman',
+            email: 'ahmad@email.com',
+            phone: '081234567890',
+            specialization: 'Tahfidz',
+            experience_years: 5,
+            education: 'S1 Pendidikan Agama Islam',
+            status: 'Aktif',
+            bio: 'Pengajar berpengalaman dalam bidang tahfidz dan tilawah'
+          },
+          {
+            id: 2,
+            name: 'Fatimah Ali',
+            email: 'fatimah@email.com',
+            phone: '081987654321',
+            specialization: 'Tajwid',
+            experience_years: 3,
+            education: 'S1 Pendidikan Agama Islam',
+            status: 'Aktif',
+            bio: 'Ahli dalam mengajarkan tajwid dan qiraah'
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredTeachers = teachers.filter(teacher =>
+    teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    teacher.specialization.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleAddTeacher = (newTeacher: Teacher) => {
+    setTeachers(prev => [newTeacher, ...prev]);
+    fetchTeachers(); // Refresh list from server
+  };
+
+  const handleEditTeacher = (updatedTeacher: Teacher) => {
+    setTeachers(teachers.map(teacher => 
+      teacher.id === updatedTeacher.id ? updatedTeacher : teacher
+    ));
+    fetchTeachers(); // Refresh list from server
+  };
+
+  const handleDeleteTeacher = async (id: number) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus pengajar ini?')) {
+      try {
+        const token = localStorage.getItem('admin_token');
+        const response = await fetch(`/api/admin/teachers/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          setTeachers(teachers.filter(teacher => teacher.id !== id));
+        } else {
+          const error = await response.json();
+          alert(error.error || 'Gagal menghapus pengajar');
+        }
+      } catch (error) {
+        console.error('Error deleting teacher:', error);
+        alert('Terjadi kesalahan');
+      }
+    }
+  };
+
+  const openEditModal = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setSelectedTeacher(null);
+  };
 
   return (
     <AdminLayout currentPage="/admin/teachers">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Data Pengajar</h1>
-            <p className="text-gray-600">Kelola informasi ustadz dan ustadzah</p>
+            <h1 className="text-3xl font-bold text-gray-900">Manajemen Pengajar</h1>
+            <p className="text-gray-600">Kelola data pengajar Taman Pendidikan Alquran</p>
           </div>
-          <button className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-            ➕ Tambah Pengajar
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+          >
+            <span>➕</span>
+            <span>Tambah Pengajar</span>
           </button>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="grid md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cari Pengajar
-              </label>
+        {/* Search */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
               <input
                 type="text"
+                placeholder="Cari berdasarkan nama atau spesialisasi..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                placeholder="Nama atau spesialisasi..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-              >
-                <option value="all">Semua Status</option>
-                <option value="active">Aktif</option>
-                <option value="inactive">Tidak Aktif</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <button className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                🔍 Filter
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Teachers Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTeachers.map((teacher) => (
-            <div key={teacher.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
-              <div className="text-center mb-4">
-                <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-blue-400 rounded-full mx-auto mb-3 flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">
-                    {teacher.name.charAt(0)}
-                  </span>
-                </div>
-                <h3 className="font-bold text-lg text-gray-900">{teacher.name}</h3>
-                <p className="text-green-600 text-sm">{teacher.specialization}</p>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center">
-                  <span className="w-16 text-gray-500">Email:</span>
-                  <span className="text-gray-900">{teacher.email}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="w-16 text-gray-500">Phone:</span>
-                  <span className="text-gray-900">{teacher.phone}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="w-16 text-gray-500">Exp:</span>
-                  <span className="text-gray-900">{teacher.experience_years} tahun</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="w-16 text-gray-500">Status:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    teacher.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {teacher.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-600 mb-3">{teacher.bio}</p>
-                <div className="flex space-x-2">
-                  <button className="flex-1 px-3 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors">
-                    Edit
-                  </button>
-                  <button className="flex-1 px-3 py-2 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors">
-                    Detail
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+        {/* Teachers Table */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Pengajar
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Kontak
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Spesialisasi
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Pengalaman
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredTeachers.map((teacher) => (
+                  <tr key={teacher.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                            <span className="text-sm font-medium text-gray-700">
+                              {teacher.name.charAt(0)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
+                          <div className="text-sm text-gray-500">{teacher.education}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{teacher.email}</div>
+                      <div className="text-sm text-gray-500">{teacher.phone}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {teacher.specialization}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {teacher.experience_years} tahun
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        teacher.status === 'Aktif' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {teacher.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => openEditModal(teacher)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTeacher(teacher.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {filteredTeachers.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">👨‍🏫</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Tidak ada pengajar</h3>
-            <p className="text-gray-600 mb-4">
-              {searchTerm || filterStatus !== 'all' 
-                ? 'Tidak ditemukan pengajar dengan kriteria tersebut.' 
-                : 'Belum ada data pengajar yang ditambahkan.'}
-            </p>
-            <button className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-              ➕ Tambah Pengajar Pertama
-            </button>
-          </div>
-        )}
-
-        {/* Statistics */}
-        <div className="grid md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm p-4">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-green-600 text-xl">👥</span>
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <span className="text-2xl">👨‍🏫</span>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Pengajar</p>
-                <p className="text-2xl font-bold text-gray-900">{teachers.length}</p>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Pengajar</p>
+                <p className="text-2xl font-bold text-blue-600">{teachers.length}</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-blue-600 text-xl">✅</span>
+              <div className="p-3 bg-green-100 rounded-lg">
+                <span className="text-2xl">✅</span>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Aktif</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {teachers.filter(t => t.status === 'active').length}
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Pengajar Aktif</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {teachers.filter(t => t.status === 'Aktif').length}
                 </p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-4">
+          
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-yellow-600 text-xl">📊</span>
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <span className="text-2xl">🎓</span>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Rata-rata Pengalaman</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {teachers.length ? Math.round(teachers.reduce((sum, t) => sum + t.experience_years, 0) / teachers.length) : 0} tahun
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-purple-600 text-xl">🎓</span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Spesialisasi</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {new Set(teachers.map(t => t.specialization)).size}
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Rata-rata Pengalaman</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {teachers.length > 0 ? Math.round(teachers.reduce((sum, t) => sum + t.experience_years, 0) / teachers.length) : 0} tahun
                 </p>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <AddTeacherModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={handleAddTeacher}
+      />
+
+      <EditTeacherModal
+        teacher={selectedTeacher}
+        isOpen={showEditModal}
+        onClose={closeEditModal}
+        onSave={handleEditTeacher}
+      />
     </AdminLayout>
   );
 }

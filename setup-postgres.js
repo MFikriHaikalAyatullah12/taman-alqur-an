@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '.env.local' });
+require('dotenv').config();
 const pool = require('./lib/db');
 
 async function setupPostgreSQLTables() {

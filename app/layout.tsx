@@ -5,15 +5,10 @@ import { TpqProvider } from '@/lib/TpqContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'TPQ Al-Hikmah - Taman Pendidikan Al-Quran',
-  description: 'Website resmi TPQ Al-Hikmah untuk pendaftaran santri, informasi kegiatan, dan pembelajaran Al-Quran',
-  keywords: 'TPQ, Taman Pendidikan Al-Quran, Mengaji, Iqra, Tahfidz, Pendidikan Islam',
-  authors: [{ name: 'TPQ Al-Hikmah' }],
-  openGraph: {
-    title: 'TPQ Al-Hikmah',
-    description: 'Taman Pendidikan Al-Quran untuk generasi Qurani',
-    type: 'website',
-  },
+  title: 'TAMAN PENDIDIKAN ALQUR\'AN - Admin Panel',
+  description: 'Sistem Manajemen TAMAN PENDIDIKAN ALQUR\'AN',
+  keywords: 'TPQ, Admin, Management System',
+  authors: [{ name: 'TAMAN PENDIDIKAN ALQUR\'AN' }],
 }
 
 export default function RootLayout({

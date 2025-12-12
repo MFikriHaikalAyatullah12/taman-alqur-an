@@ -1,64 +1,93 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 
 interface Donation {
-  id: string;
-  donorName: string;
-  donorContact: string;
+  id: number;
+  donor_name: string;
   amount: number;
-  type: 'infaq' | 'zakat' | 'wakaf' | 'general';
-  purpose: string;
-  date: string;
-  status: 'pending' | 'confirmed' | 'used';
-  note?: string;
+  donation_type: string;
+  message: string;
+  created_at: string;
+  status: string;
+  payment_method: string;
 }
 
 export default function DonationsPage() {
-  const [donations, setDonations] = useState<Donation[]>([
-    {
-      id: 'D001',
-      donorName: 'Bapak Ahmad',
-      donorContact: '081234567890',
-      amount: 500000,
-      type: 'infaq',
-      purpose: 'Renovasi Masjid',
-      date: '2024-01-15',
-      status: 'confirmed',
-      note: 'Untuk perbaikan atap'
-    },
-    {
-      id: 'D002',
-      donorName: 'Ibu Siti',
-      donorContact: 'siti@email.com',
-      amount: 200000,
-      type: 'zakat',
-      purpose: 'Bantuan Anak Yatim',
-      date: '2024-01-10',
-      status: 'used',
-      note: 'Sudah disalurkan untuk 5 anak'
-    },
-    {
-      id: 'D003',
-      donorName: 'Donatur Anonim',
-      donorContact: '-',
-      amount: 1000000,
-      type: 'wakaf',
-      purpose: 'Pembangunan Perpustakaan',
-      date: '2024-01-05',
-      status: 'pending',
-      note: 'Menunggu konfirmasi transfer'
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    donor_name: '',
+    amount: '',
+    donation_type: 'umum',
+    message: '',
+    payment_method: 'cash'
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Mock data for testing
+  useEffect(() => {
+    setDonations([
+      {
+        id: 1,
+        donor_name: 'Ahmad Rahman',
+        amount: 500000,
+        donation_type: 'umum',
+        message: 'Semoga berkah',
+        created_at: new Date().toISOString(),
+        status: 'confirmed',
+        payment_method: 'cash'
+      },
+      {
+        id: 2,
+        donor_name: 'Siti Aisyah',
+        amount: 250000,
+        donation_type: 'beasiswa',
+        message: 'Untuk beasiswa anak yatim',
+        created_at: new Date().toISOString(),
+        status: 'confirmed',
+        payment_method: 'transfer'
+      }
+    ]);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const newDonation: Donation = {
+        id: donations.length + 1,
+        donor_name: formData.donor_name,
+        amount: parseFloat(formData.amount),
+        donation_type: formData.donation_type,
+        message: formData.message,
+        created_at: new Date().toISOString(),
+        status: 'confirmed',
+        payment_method: formData.payment_method
+      };
+
+      setDonations(prev => [newDonation, ...prev]);
+      setIsAddModalOpen(false);
+      setFormData({
+        donor_name: '',
+        amount: '',
+        donation_type: 'umum',
+        message: '',
+        payment_method: 'cash'
+      });
+      alert('Donasi berhasil ditambahkan!');
+    } catch (error) {
+      alert('Gagal menambahkan donasi');
+    } finally {
+      setIsSaving(false);
     }
-  ]);
-
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedType, setSelectedType] = useState<string>('all');
-
-  const filteredDonations = selectedType === 'all' 
-    ? donations 
-    : donations.filter(donation => donation.type === selectedType);
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -67,189 +96,86 @@ export default function DonationsPage() {
     }).format(amount);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'used': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const getTotalDonations = () => {
+    return donations
+      .filter(d => d.status === 'confirmed')
+      .reduce((total, donation) => total + donation.amount, 0);
   };
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'infaq': return 'Infaq';
-      case 'zakat': return 'Zakat';
-      case 'wakaf': return 'Wakaf';
-      case 'general': return 'Donasi Umum';
-      default: return type;
-    }
-  };
-
-  const totalAmount = filteredDonations.reduce((sum, donation) => sum + donation.amount, 0);
-  const confirmedAmount = filteredDonations
-    .filter(d => d.status === 'confirmed' || d.status === 'used')
-    .reduce((sum, donation) => sum + donation.amount, 0);
-  const usedAmount = filteredDonations
-    .filter(d => d.status === 'used')
-    .reduce((sum, donation) => sum + donation.amount, 0);
 
   return (
-    <AdminLayout>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Manajemen Donasi</h1>
+    <AdminLayout currentPage="/admin/payments/donations">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Donasi</h1>
+            <p className="text-gray-600">Kelola data donasi masuk</p>
+          </div>
           <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
           >
-            Tambah Donasi
+            + Tambah Donasi
           </button>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500">Total Donasi</h3>
-            <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalAmount)}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500">Donasi Terkonfirmasi</h3>
-            <p className="text-2xl font-bold text-green-600">{formatCurrency(confirmedAmount)}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500">Donasi Tersalurkan</h3>
-            <p className="text-2xl font-bold text-purple-600">{formatCurrency(usedAmount)}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-sm font-medium text-gray-500">Saldo Tersisa</h3>
-            <p className="text-2xl font-bold text-orange-600">{formatCurrency(confirmedAmount - usedAmount)}</p>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex flex-wrap gap-4 items-center">
-            <label className="font-medium">Filter Jenis:</label>
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Semua Jenis</option>
-              <option value="infaq">Infaq</option>
-              <option value="zakat">Zakat</option>
-              <option value="wakaf">Wakaf</option>
-              <option value="general">Donasi Umum</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Add Donation Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-4 w-full max-w-lg mx-4">
-              <h2 className="text-lg font-bold mb-3">Tambah Donasi Baru</h2>
-              <form className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Nama Donatur</label>
-                    <input
-                      type="text"
-                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      placeholder="Masukkan nama donatur"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Kontak</label>
-                    <input
-                      type="text"
-                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      placeholder="No. telp atau email"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Jenis Donasi</label>
-                    <select className="w-full border border-gray-300 rounded px-2 py-1.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                      <option value="infaq">Infaq</option>
-                      <option value="zakat">Zakat</option>
-                      <option value="wakaf">Wakaf</option>
-                      <option value="general">Donasi Umum</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Jumlah</label>
-                    <input
-                      type="number"
-                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      placeholder="Masukkan jumlah donasi"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Tujuan</label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    placeholder="Tujuan donasi"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Catatan</label>
-                  <textarea
-                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    rows={2}
-                    placeholder="Catatan tambahan (opsional)"
-                  ></textarea>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                  >
-                    Simpan
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
-                  >
-                    Batal
-                  </button>
-                </div>
-              </form>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-lg">
+                <span className="text-2xl">💰</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Donasi</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(getTotalDonations())}</p>
+              </div>
             </div>
           </div>
-        )}
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <span className="text-2xl">📊</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Transaksi</p>
+                <p className="text-2xl font-bold text-gray-900">{donations.length}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <span className="text-2xl">🤲</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Donatur Aktif</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {new Set(donations.map(d => d.donor_name)).size}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Donations Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b">
-            <h2 className="text-xl font-semibold">Daftar Donasi</h2>
-            <p className="text-gray-600 text-sm mt-1">
-              Total: {filteredDonations.length} donasi
-            </p>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Donatur
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Jenis
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Jumlah
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tujuan
+                    Jenis
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Metode
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Tanggal
@@ -257,60 +183,158 @@ export default function DonationsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Aksi
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredDonations.map((donation) => (
-                  <tr key={donation.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {donation.id}
+                {donations.length > 0 ? donations.map((donation) => (
+                  <tr key={donation.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{donation.donor_name}</div>
+                        {donation.message && (
+                          <div className="text-sm text-gray-500">{donation.message}</div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{donation.donorName}</div>
-                      <div className="text-sm text-gray-500">{donation.donorContact}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatCurrency(donation.amount)}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {getTypeLabel(donation.type)}
+                        {donation.donation_type}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {formatCurrency(donation.amount)}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {donation.payment_method}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {donation.purpose}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {donation.date}
+                      {new Date(donation.created_at).toLocaleDateString('id-ID')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(donation.status)}`}>
-                        {donation.status === 'pending' ? 'Menunggu' : 
-                         donation.status === 'confirmed' ? 'Terkonfirmasi' : 
-                         'Tersalurkan'}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        donation.status === 'confirmed' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {donation.status === 'confirmed' ? 'Dikonfirmasi' : 'Pending'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-blue-600 hover:text-blue-900 mr-3">
-                        Edit
-                      </button>
-                      <button className="text-green-600 hover:text-green-900 mr-3">
-                        Konfirmasi
-                      </button>
-                      <button className="text-red-600 hover:text-red-900">
-                        Hapus
-                      </button>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      <div className="flex flex-col items-center">
+                        <span className="text-4xl mb-4">💰</span>
+                        <p>Belum ada data donasi</p>
+                        <p className="text-sm">Tambahkan donasi pertama untuk memulai</p>
+                      </div>
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
+
+      {/* Add Donation Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Tambah Donasi</h2>
+              <button 
+                onClick={() => setIsAddModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Donatur</label>
+                <input
+                  type="text"
+                  value={formData.donor_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, donor_name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Donasi</label>
+                <input
+                  type="number"
+                  value={formData.amount}
+                  onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  min="1000"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Jenis Donasi</label>
+                <select
+                  value={formData.donation_type}
+                  onChange={(e) => setFormData(prev => ({ ...prev, donation_type: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                >
+                  <option value="umum">Donasi Umum</option>
+                  <option value="beasiswa">Beasiswa</option>
+                  <option value="fasilitas">Fasilitas</option>
+                  <option value="kegiatan">Kegiatan</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Metode Pembayaran</label>
+                <select
+                  value={formData.payment_method}
+                  onChange={(e) => setFormData(prev => ({ ...prev, payment_method: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                >
+                  <option value="cash">Tunai</option>
+                  <option value="transfer">Transfer Bank</option>
+                  <option value="ewallet">E-Wallet</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Pesan (Opsional)</label>
+                <textarea
+                  value={formData.message}
+                  onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                  placeholder="Pesan dari donatur..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+                >
+                  {isSaving ? 'Menyimpan...' : 'Tambah Donasi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

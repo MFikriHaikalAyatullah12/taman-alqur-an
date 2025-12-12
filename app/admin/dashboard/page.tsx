@@ -29,49 +29,37 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Simulate API call with demo data
-      setTimeout(() => {
-        setStats({
-          totalStudents: 125,
-          totalTeachers: 15,
-          pendingRegistrations: 8,
-          activePrograms: 6,
-          monthlyRevenue: 12500000,
-          recentActivities: [
-            {
-              id: 1,
-              type: 'student_registration',
-              message: 'Ahmad Fauzi mendaftar sebagai santri baru',
-              time: '2 jam yang lalu'
-            },
-            {
-              id: 2,
-              type: 'payment',
-              message: 'Pembayaran SPP dari Siti Nurhaliza',
-              time: '3 jam yang lalu'
-            },
-            {
-              id: 3,
-              type: 'progress',
-              message: 'Muhammad Ali menyelesaikan Iqra 4',
-              time: '5 jam yang lalu'
-            },
-            {
-              id: 4,
-              type: 'event',
-              message: 'Jadwal ujian kenaikan jilid telah ditambahkan',
-              time: '1 hari yang lalu'
-            },
-            {
-              id: 5,
-              type: 'news',
-              message: 'Artikel "Tips Mengaji di Rumah" telah dipublikasi',
-              time: '2 hari yang lalu'
-            }
-          ]
-        });
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        console.error('No admin token found');
         setIsLoading(false);
-      }, 1000);
+        return;
+      }
+
+      const response = await fetch('/api/admin/dashboard', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data.data);
+      } else {
+        console.error('Failed to fetch dashboard data');
+        // Fallback to demo data if API fails
+        setStats({
+          totalStudents: 0,
+          totalTeachers: 0,
+          pendingRegistrations: 0,
+          activePrograms: 0,
+          monthlyRevenue: 0,
+          recentActivities: []
+        });
+      }
+      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       setIsLoading(false);

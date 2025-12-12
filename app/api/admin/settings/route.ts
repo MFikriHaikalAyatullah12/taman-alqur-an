@@ -38,29 +38,30 @@ export async function GET(request: NextRequest) {
       // Buat settings default jika belum ada
       const defaultSettings = {
         admin_id: admin.adminId,
-        site_name: admin.tpqName || 'TPQ Al-Hikmah',
-        site_description: `${admin.tpqName || 'TPQ Al-Hikmah'} adalah Taman Pendidikan Al-Quran terpercaya`,
+        site_name: admin.tpqName || 'TAMAN PENDIDIKAN ALQUR\'AN',
+        site_description: `${admin.tpqName || 'TAMAN PENDIDIKAN ALQUR\'AN'} adalah Taman Pendidikan Al-Quran terpercaya`,
+        logo_url: '',
         whatsapp: '6281234567890',
         whatsapp_message: 'Assalamu\'alaikum, saya ingin bertanya tentang TPQ',
         phone: '(021) 123-4567',
         email: admin.email,
         address: 'Alamat TPQ belum diatur',
-        hero_title: `Selamat Datang di ${admin.tpqName || 'TPQ Al-Hikmah'}`,
+        hero_title: `Selamat Datang di ${admin.tpqName || 'TAMAN PENDIDIKAN ALQUR\'AN'}`,
         hero_subtitle: 'Tempat terbaik untuk belajar Al-Quran',
-        about_title: `Tentang ${admin.tpqName || 'TPQ Al-Hikmah'}`,
+        about_title: `Tentang ${admin.tpqName || 'TAMAN PENDIDIKAN ALQUR\'AN'}`,
         about_description: 'TPQ terpercaya dengan metode pembelajaran yang berkualitas'
       };
 
       const insertResult = await pool.query(
         `INSERT INTO tpq_settings (
-          admin_id, site_name, site_description, whatsapp, whatsapp_message,
+          admin_id, site_name, site_description, logo_url, whatsapp, whatsapp_message,
           phone, email, address, hero_title, hero_subtitle, about_title, about_description,
           created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
         RETURNING *`,
         [
           defaultSettings.admin_id, defaultSettings.site_name, defaultSettings.site_description,
-          defaultSettings.whatsapp, defaultSettings.whatsapp_message, defaultSettings.phone,
+          defaultSettings.logo_url, defaultSettings.whatsapp, defaultSettings.whatsapp_message, defaultSettings.phone,
           defaultSettings.email, defaultSettings.address, defaultSettings.hero_title,
           defaultSettings.hero_subtitle, defaultSettings.about_title, defaultSettings.about_description
         ]
@@ -92,29 +93,31 @@ export async function PUT(request: NextRequest) {
       `UPDATE tpq_settings SET
         site_name = $1,
         site_description = $2,
-        whatsapp = $3,
-        whatsapp_message = $4,
-        phone = $5,
-        email = $6,
-        address = $7,
-        facebook_url = $8,
-        instagram_url = $9,
-        youtube_url = $10,
-        weekdays_hours = $11,
-        saturday_hours = $12,
-        sunday_hours = $13,
-        hero_title = $14,
-        hero_subtitle = $15,
-        about_title = $16,
-        about_description = $17,
-        primary_color = $18,
-        secondary_color = $19,
+        logo_url = $3,
+        whatsapp = $4,
+        whatsapp_message = $5,
+        phone = $6,
+        email = $7,
+        address = $8,
+        facebook_url = $9,
+        instagram_url = $10,
+        youtube_url = $11,
+        weekdays_hours = $12,
+        saturday_hours = $13,
+        sunday_hours = $14,
+        hero_title = $15,
+        hero_subtitle = $16,
+        about_title = $17,
+        about_description = $18,
+        primary_color = $19,
+        secondary_color = $20,
         updated_at = NOW()
-      WHERE admin_id = $20
+      WHERE admin_id = $21
       RETURNING *`,
       [
         settings.site_name || admin.tpqName,
         settings.site_description || '',
+        settings.logo || '',
         settings.whatsapp || '',
         settings.whatsapp_message || '',
         settings.phone || '',
@@ -126,9 +129,9 @@ export async function PUT(request: NextRequest) {
         settings.weekdays_hours || 'Senin - Jumat: 15:00 - 17:00',
         settings.saturday_hours || 'Sabtu: 08:00 - 10:00',
         settings.sunday_hours || 'Minggu: Libur',
-        settings.hero_title || `Selamat Datang di ${admin.tpqName}`,
+        settings.hero_title || 'Selamat Datang di Taman Pendidikan Alquran',
         settings.hero_subtitle || 'Tempat terbaik untuk belajar Al-Quran',
-        settings.about_title || `Tentang ${admin.tpqName}`,
+        settings.about_title || 'Tentang Taman Pendidikan Alquran',
         settings.about_description || '',
         settings.primary_color || '#10b981',
         settings.secondary_color || '#3b82f6',
@@ -183,14 +186,15 @@ export async function POST(request: NextRequest) {
       // Insert new record
       result = await pool.query(
         `INSERT INTO tpq_settings (
-          admin_id, site_name, site_description, whatsapp, whatsapp_message,
+          admin_id, site_name, site_description, logo_url, whatsapp, whatsapp_message,
           phone, email, address, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         RETURNING *`,
         [
           admin.adminId,
-          settings.site_name || admin.tpqName || 'TPQ Al-Hikmah',
+          settings.site_name || 'Taman Pendidikan Alquran',
           settings.site_description || '',
+          settings.logo && settings.logo.length > 500 ? settings.logo.substring(0, 500) : settings.logo || '',
           settings.whatsapp || '',
           settings.whatsapp_message || 'Assalamu\'alaikum, saya ingin bertanya tentang TPQ',
           settings.phone || '',
@@ -208,6 +212,7 @@ export async function POST(request: NextRequest) {
       const fieldMapping = {
         'site_name': settings.site_name,
         'site_description': settings.site_description,
+        'logo_url': settings.logo ? settings.logo.substring(0, 500) : null,
         'whatsapp': settings.whatsapp,
         'whatsapp_message': settings.whatsapp_message,
         'phone': settings.phone,

@@ -22,7 +22,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
   const [user, setUser] = useState<any>(null);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   
-  let settings = { site_name: 'TPQ Al-Hikmah' };
+  let settings = { site_name: 'TAMAN PENDIDIKAN ALQUR\'AN' };
   let refreshSettings = () => {};
   
   try {
@@ -46,9 +46,6 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
       icon: '🏢',
       label: 'Profil TPQ',
       children: [
-        { href: '/admin/profile/info', icon: 'ℹ️', label: 'Informasi TPQ' },
-        { href: '/admin/profile/history', icon: '📜', label: 'Sejarah' },
-        { href: '/admin/profile/vision-mission', icon: '🎯', label: 'Visi & Misi' },
         { href: '/admin/profile/organization', icon: '👥', label: 'Struktur Organisasi' },
         { href: '/admin/profile/achievements', icon: '🏆', label: 'Prestasi' }
       ]
@@ -59,8 +56,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
       label: 'Pengajar',
       children: [
         { href: '/admin/teachers', icon: '👥', label: 'Data Pengajar' },
-        { href: '/admin/teachers/schedule', icon: '📅', label: 'Jadwal Mengajar' },
-        { href: '/admin/teachers/add', icon: '➕', label: 'Tambah Pengajar' }
+        { href: '/admin/teachers/schedule', icon: '📅', label: 'Jadwal Mengajar' }
       ]
     },
     {
@@ -68,32 +64,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
       icon: '👨‍🎓',
       label: 'Santri',
       children: [
-        { href: '/admin/students', icon: '📋', label: 'Data Santri' },
-        { href: '/admin/students/registrations', icon: '📝', label: 'Pendaftaran' },
-        { href: '/admin/students/progress', icon: '📊', label: 'Progress Belajar' },
-        { href: '/admin/students/add', icon: '➕', label: 'Tambah Santri' }
-      ]
-    },
-    {
-      href: '/admin/curriculum',
-      icon: '📚',
-      label: 'Kurikulum',
-      children: [
-        { href: '/admin/curriculum', icon: '📖', label: 'Program Pembelajaran' },
-        { href: '/admin/curriculum/levels', icon: '🎚️', label: 'Tingkatan' },
-        { href: '/admin/curriculum/materials', icon: '📋', label: 'Materi' },
-        { href: '/admin/curriculum/methods', icon: '🎓', label: 'Metode Pembelajaran' }
-      ]
-    },
-    {
-      href: '/admin/schedule',
-      icon: '📅',
-      label: 'Jadwal & Kalender',
-      children: [
-        { href: '/admin/schedule/calendar', icon: '📅', label: 'Jadwal Mengaji' },
-        { href: '/admin/schedule/classes', icon: '🕐', label: 'Jadwal Kelas' },
-        { href: '/admin/schedule/events', icon: '🎉', label: 'Kegiatan' },
-        { href: '/admin/schedule/exams', icon: '📝', label: 'Ujian & Evaluasi' }
+        { href: '/admin/students', icon: '📋', label: 'Data Santri' }
       ]
     },
     {
@@ -101,25 +72,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
       icon: '💰',
       label: 'Pembayaran',
       children: [
-        { href: '/admin/payments/transactions', icon: '💳', label: 'Transaksi' },
-        { href: '/admin/payments/donations', icon: '🤲', label: 'Donasi' },
-        { href: '/admin/payments/reports', icon: '📊', label: 'Laporan Keuangan' }
-      ]
-    },
-    {
-      href: '/admin/contact',
-      icon: '📞',
-      label: 'Kontak & Pesan'
-    },
-    {
-      href: '/admin/settings',
-      icon: '⚙️',
-      label: 'Pengaturan',
-      children: [
-        { href: '/admin/settings', icon: '🎛️', label: 'Pengaturan Umum' },
-        { href: '/admin/settings/users', icon: '👥', label: 'Manajemen User' },
-        { href: '/admin/settings/backup', icon: '💾', label: 'Backup Data' },
-        { href: '/admin/settings/security', icon: '🔒', label: 'Keamanan' }
+        { href: '/admin/payments/donations', icon: '🤲', label: 'Donasi' }
       ]
     }
   ];
@@ -187,15 +140,38 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-500 text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm">
-                {settings.site_name.charAt(0)}
-              </div>
-              <div>
-                <h1 className="font-semibold text-lg text-gray-800">{settings.site_name}</h1>
-                <p className="text-xs text-gray-500">Panel Admin</p>
+              {settings && (settings as any)?.logo ? (
+                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border-2 border-blue-200 shadow-sm flex-shrink-0">
+                  <img 
+                    src={(settings as any).logo} 
+                    alt="Logo TAMAN PENDIDIKAN ALQUR'AN" 
+                    className="w-full h-full object-contain p-1"
+                    style={{ imageRendering: 'crisp-edges' } as React.CSSProperties}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      if (e.currentTarget.nextElementSibling) {
+                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div 
+                    className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-full h-full rounded-lg flex items-center justify-center font-bold text-lg shadow-md"
+                    style={{ display: 'none' }}
+                  >
+                    🏫
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-md">
+                  🏫
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <h1 className="font-bold text-lg text-gray-800 truncate">Taman Pendidikan Alquran</h1>
+                <p className="text-xs text-blue-600 font-medium">Panel Admin</p>
               </div>
             </div>
-            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-gray-500 hover:text-gray-700">
+            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-gray-500 hover:text-gray-700 p-1 rounded">
               ✕
             </button>
           </div>
@@ -299,9 +275,6 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
             </div>
 
             <div className="flex items-center space-x-4">
-              <Link href="/" className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 transition-colors" title="Lihat Website Publik">
-                🌐 Website Publik
-              </Link>
               <div className="text-sm text-gray-500">
                 {new Date().toLocaleDateString('id-ID', {
                   weekday: 'short',

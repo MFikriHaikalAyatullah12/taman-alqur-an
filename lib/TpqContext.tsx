@@ -5,6 +5,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 interface TpqSettings {
   site_name: string;
   site_description: string;
+  logo?: string;
   whatsapp: string;
   whatsapp_message: string;
   phone: string;
@@ -26,8 +27,9 @@ interface TpqContextType {
 }
 
 const defaultSettings: TpqSettings = {
-  site_name: 'TPQ Al-Hikmah',
+  site_name: 'Taman Pendidikan Alquran',
   site_description: '',
+  logo: '',
   whatsapp: '',
   whatsapp_message: 'Assalamu\'alaikum, saya ingin bertanya tentang TPQ',
   phone: '',
@@ -36,8 +38,8 @@ const defaultSettings: TpqSettings = {
   facebook_url: '',
   instagram_url: '',
   youtube_url: '',
-  hero_title: 'Selamat Datang di TPQ Al-Hikmah',
-  about_title: 'Tentang TPQ Al-Hikmah',
+  hero_title: 'Selamat Datang di Taman Pendidikan Alquran',
+  about_title: 'Tentang Taman Pendidikan Alquran',
   hero_subtitle: 'Tempat terbaik untuk belajar Al-Quran',
   about_description: ''
 };
@@ -49,20 +51,34 @@ export function TpqProvider({ children }: { children: ReactNode }) {
 
   const refreshSettings = async () => {
     try {
-      const response = await fetch('/api/public/settings', {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache'
+      // Since public API is removed, use default settings or admin API if needed
+      const token = localStorage.getItem('admin_token');
+      if (token) {
+        const response = await fetch('/api/admin/settings', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const settingsData = data.settings || data;
+          // Map logo_url to logo for frontend consistency
+          if (settingsData.logo_url) {
+            settingsData.logo = settingsData.logo_url;
+          }
+          setSettings({ ...defaultSettings, ...settingsData });
+          console.log('Settings refreshed:', settingsData);
         }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSettings({ ...defaultSettings, ...data });
-        console.log('Settings refreshed:', data);
+      } else {
+        // Use default settings if no admin token
+        setSettings(defaultSettings);
       }
     } catch (error) {
       console.error('Error loading TPQ settings:', error);
       // Continue with default settings if fetch fails
+      setSettings(defaultSettings);
     }
   };
 

@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Verifikasi password
     const validPassword = await bcrypt.compare(password, admin.password);
+    
     if (!validPassword) {
       return NextResponse.json({ error: 'Email atau password salah' }, { status: 401 });
     }
