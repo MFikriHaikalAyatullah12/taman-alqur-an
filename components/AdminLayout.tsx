@@ -22,7 +22,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
   const [user, setUser] = useState<any>(null);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   
-  let settings = { site_name: 'TAMAN PENDIDIKAN ALQUR\'AN' };
+  let settings = { site_name: 'TPQ AN-NABA' };
   let refreshSettings = () => {};
   
   try {
@@ -147,7 +147,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-white border-2 border-blue-200 shadow-sm flex-shrink-0">
                   <img 
                     src={(settings as any).logo} 
-                    alt="Logo TAMAN PENDIDIKAN ALQUR'AN" 
+                    alt="Logo TPQ AN-NABA" 
                     className="w-full h-full object-contain p-1"
                     style={{ imageRendering: 'crisp-edges' } as React.CSSProperties}
                     onError={(e) => {
@@ -170,7 +170,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <h1 className="font-bold text-base sm:text-lg text-gray-800 truncate leading-tight">TAMAN PENDIDIKAN ALQUR'AN</h1>
+                <h1 className="font-bold text-base sm:text-lg text-gray-800 truncate leading-tight">TPQ AN-NABA</h1>
                 <p className="text-xs text-blue-600 font-medium">Panel Admin</p>
               </div>
             </div>

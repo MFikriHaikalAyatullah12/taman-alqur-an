@@ -49,7 +49,7 @@ export default function FinancialReportsPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Laporan Keuangan</h1>
-            <p className="text-gray-600">Pantau kondisi keuangan Taman Pendidikan Alquran</p>
+            <p className="text-gray-600">Pantau kondisi keuangan TPQ AN-NABA</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <select 

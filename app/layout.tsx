@@ -5,10 +5,10 @@ import { TpqProvider } from '@/lib/TpqContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'TAMAN PENDIDIKAN ALQUR\'AN - Admin Panel',
-  description: 'Sistem Manajemen TAMAN PENDIDIKAN ALQUR\'AN',
+  title: 'TPQ AN-NABA - Admin Panel',
+  description: 'Sistem Manajemen TPQ AN-NABA',
   keywords: 'TPQ, Admin, Management System',
-  authors: [{ name: 'TAMAN PENDIDIKAN ALQUR\'AN' }],
+  authors: [{ name: 'TPQ AN-NABA' }],
 }
 
 export default function RootLayout({

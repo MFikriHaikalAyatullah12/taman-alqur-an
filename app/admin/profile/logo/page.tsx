@@ -88,7 +88,7 @@ export default function AdminLogoPage() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          site_name: settings?.site_name || 'TAMAN PENDIDIKAN ALQUR\'AN',
+          site_name: settings?.site_name || 'TPQ AN-NABA',
           logo: logoBase64
         })
       });
@@ -125,14 +125,14 @@ export default function AdminLogoPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Upload Logo</h1>
-          <p className="text-gray-600">Upload logo TAMAN PENDIDIKAN ALQUR'AN sebagai identitas</p>
+          <p className="text-gray-600">Upload logo TPQ AN-NABA sebagai identitas</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           <form onSubmit={handleSave} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Logo TAMAN PENDIDIKAN ALQUR'AN
+                Logo TPQ AN-NABA
               </label>
               
               {/* Preview Logo */}
@@ -169,7 +169,7 @@ export default function AdminLogoPage() {
                       </div>
                       <div className="text-center">
                         <p className="text-gray-500 font-medium">Belum ada logo</p>
-                        <p className="text-xs text-gray-400">Upload logo TAMAN PENDIDIKAN ALQUR'AN Anda untuk identitas yang profesional</p>
+                        <p className="text-xs text-gray-400">Upload logo TPQ AN-NABA Anda untuk identitas yang profesional</p>
                       </div>
                     </div>
                   )}

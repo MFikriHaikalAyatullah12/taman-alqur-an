@@ -1,4 +1,4 @@
-TPQ Al-Hikmah - Taman Pendidikan Al-Quran terpercaya di Jakarta. 
+TPQ AN-NABA - Taman Pendidikan Al-Quran terpercaya di Jakarta. 
 
 Fitur Website:
 ✅ Pendaftaran Santri Online

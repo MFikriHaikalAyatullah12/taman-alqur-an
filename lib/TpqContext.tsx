@@ -27,7 +27,7 @@ interface TpqContextType {
 }
 
 const defaultSettings: TpqSettings = {
-  site_name: 'Taman Pendidikan Alquran',
+  site_name: 'TPQ AN-NABA',
   site_description: '',
   logo: '',
   whatsapp: '',
@@ -38,8 +38,8 @@ const defaultSettings: TpqSettings = {
   facebook_url: '',
   instagram_url: '',
   youtube_url: '',
-  hero_title: 'Selamat Datang di Taman Pendidikan Alquran',
-  about_title: 'Tentang Taman Pendidikan Alquran',
+  hero_title: 'Selamat Datang di TPQ AN-NABA',
+  about_title: 'Tentang TPQ AN-NABA',
   hero_subtitle: 'Tempat terbaik untuk belajar Al-Quran',
   about_description: ''
 };

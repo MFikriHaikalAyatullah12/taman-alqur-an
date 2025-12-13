@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       // Buat settings default jika belum ada
       const defaultSettings = {
         admin_id: admin.adminId,
-        site_name: admin.tpqName || 'TAMAN PENDIDIKAN ALQUR\'AN',
+        site_name: admin.tpqName || 'TPQ AN-NABA',
         site_description: `${admin.tpqName || 'TAMAN PENDIDIKAN ALQUR\'AN'} adalah Taman Pendidikan Al-Quran terpercaya`,
         logo_url: '',
         whatsapp: '6281234567890',

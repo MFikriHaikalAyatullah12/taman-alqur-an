@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS admins (
 CREATE TABLE IF NOT EXISTS tpq_settings (
     id SERIAL PRIMARY KEY,
     admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE,
-    site_name VARCHAR(255) NOT NULL DEFAULT 'TAMAN PENDIDIKAN ALQUR\'AN',
+    site_name VARCHAR(255) NOT NULL DEFAULT 'TPQ AN-NABA',
     site_description TEXT,
     logo_url VARCHAR(500),
     

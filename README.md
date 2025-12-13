@@ -1,6 +1,6 @@
-# TPQ Al-Hikmah Website
+# TPQ AN-NABA Website
 
-Website resmi Taman Pendidikan Al-Quran (TPQ) Al-Hikmah dengan sistem manajemen lengkap untuk admin dan dashboard santri.
+Website resmi TPQ AN-NABA dengan sistem manajemen lengkap untuk admin dan dashboard santri.
 
 ## 🌟 Fitur Utama
 
