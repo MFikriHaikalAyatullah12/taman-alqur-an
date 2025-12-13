@@ -1,28 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-const pool = require('@/lib/db');
+import pool from '@/lib/db';
+import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Pastikan ada admin di database
-    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
-    if (adminCheck.rows.length === 0) {
-      return NextResponse.json({ 
-        error: 'Admin tidak ditemukan. Silakan login ulang.' 
-      }, { status: 400 });
-    }
-    
-    const adminId = adminCheck.rows[0].id;
+    const token = authHeader.substring(7);
+    let adminId;
 
-    // Get students statistics
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      adminId = decoded.adminId;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Get students statistics untuk admin yang login
     const studentsResult = await pool.query(`
       SELECT 
         COUNT(*) as total_students,
@@ -31,7 +30,7 @@ export async function GET(request: NextRequest) {
       WHERE admin_id = $1
     `, [adminId]);
 
-    // Get teachers statistics
+    // Get teachers statistics untuk admin yang login
     const teachersResult = await pool.query(`
       SELECT 
         COUNT(*) as total_teachers,
@@ -40,7 +39,7 @@ export async function GET(request: NextRequest) {
       WHERE admin_id = $1
     `, [adminId]);
 
-    // Get finances statistics
+    // Get finances statistics untuk admin yang login
     const financesResult = await pool.query(`
       SELECT 
         SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,

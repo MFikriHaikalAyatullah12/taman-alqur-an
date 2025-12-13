@@ -13,13 +13,8 @@ interface OrgMember {
 
 export default function OrganizationPage() {
   const [mounted, setMounted] = useState(false);
-  const [orgStructure, setOrgStructure] = useState<OrgMember[]>([
-    { id: 1, position: 'Kepala TPQ', name: 'Ustadz Ahmad Fauzi', image: 'https://ui-avatars.com/api/?name=AF&background=4ade80&color=ffffff&size=150&rounded=true', description: 'Memimpin dan mengawasi seluruh kegiatan TPQ' },
-    { id: 2, position: 'Wakil Kepala', name: 'Ustadzah Siti Fatimah', image: 'https://ui-avatars.com/api/?name=SF&background=22c55e&color=ffffff&size=150&rounded=true', description: 'Membantu kepala dalam mengelola TPQ' },
-    { id: 3, position: 'Koordinator Pendidikan', name: 'Ustadz Muhammad Yusuf', image: 'https://ui-avatars.com/api/?name=MY&background=16a34a&color=ffffff&size=150&rounded=true', description: 'Mengkoordinasi program pembelajaran' },
-    { id: 4, position: 'Bendahara', name: 'Ustadzah Aminah', image: 'https://ui-avatars.com/api/?name=A&background=15803d&color=ffffff&size=150&rounded=true', description: 'Mengelola keuangan TPQ' },
-    { id: 5, position: 'Sekretaris', name: 'Ustadz Abdul Rahman', image: 'https://ui-avatars.com/api/?name=AR&background=166534&color=ffffff&size=150&rounded=true', description: 'Mengelola administrasi TPQ' }
-  ]);
+  const [orgStructure, setOrgStructure] = useState<OrgMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
   const [editingMember, setEditingMember] = useState<OrgMember | null>(null);
@@ -33,7 +28,36 @@ export default function OrganizationPage() {
 
   useEffect(() => {
     setMounted(true);
+    fetchOrganization();
   }, []);
+
+  const fetchOrganization = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        alert('Anda harus login terlebih dahulu');
+        return;
+      }
+
+      const response = await fetch('/api/admin/organization', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setOrgStructure(result.data);
+      } else {
+        console.error('Failed to fetch organization:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching organization:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!mounted) {
     return null; // Prevent hydration mismatch
@@ -61,24 +85,82 @@ export default function OrganizationPage() {
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (editingMember) {
-      setOrgStructure(prev => prev.map(member => 
-        member.id === editingMember.id 
-          ? { ...member, ...formData }
-          : member
-      ));
-    } else {
-      const newId = Math.max(...orgStructure.map(m => m.id), 0) + 1;
-      setOrgStructure(prev => [...prev, { id: newId, ...formData }]);
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        alert('Anda harus login terlebih dahulu');
+        return;
+      }
+
+      const url = '/api/admin/organization';
+      const method = editingMember ? 'PUT' : 'POST';
+      const payload = editingMember 
+        ? { id: editingMember.id, ...formData }
+        : formData;
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert(result.message);
+        await fetchOrganization(); // Refresh data
+        setShowModal(false);
+      } else {
+        alert(result.error || 'Gagal menyimpan data');
+      }
+    } catch (error) {
+      console.error('Error saving organization member:', error);
+      alert('Terjadi kesalahan saat menyimpan data');
     }
-    setShowModal(false);
   };
 
-  const handleDelete = (id: number) => {
-    setOrgStructure(prev => prev.filter(member => member.id !== id));
-    setShowDeleteConfirm(null);
+  const handleDelete = async (id: number) => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        alert('Anda harus login terlebih dahulu');
+        return;
+      }
+
+      const response = await fetch(`/api/admin/organization/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert(result.message);
+        await fetchOrganization(); // Refresh data
+        setShowDeleteConfirm(null);
+      } else {
+        alert(result.error || 'Gagal menghapus anggota');
+      }
+    } catch (error) {
+      console.error('Error deleting organization member:', error);
+      alert('Terjadi kesalahan saat menghapus anggota');
+    }
   };
+
+  if (!mounted || isLoading) {
+    return (
+      <AdminLayout currentPage="/admin/profile/organization">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout currentPage="/admin/profile/organization">

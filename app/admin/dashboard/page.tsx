@@ -24,9 +24,12 @@ interface DashboardData {
 export default function AdminDashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    setLastRefresh(new Date());
     fetchDashboardData();
     
     // Auto refresh setiap 30 detik
@@ -47,7 +50,9 @@ export default function AdminDashboardPage() {
       if (response.ok) {
         const result = await response.json();
         setDashboardData(result.data);
-        setLastRefresh(new Date());
+        if (mounted) {
+          setLastRefresh(new Date());
+        }
       } else {
         console.error('Failed to fetch dashboard data');
       }
@@ -88,7 +93,9 @@ export default function AdminDashboardPage() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-gray-600">Ringkasan data TPQ secara realtime</p>
-            <p className="text-sm text-gray-500">Terakhir diperbarui: {lastRefresh.toLocaleTimeString('id-ID')}</p>
+            {mounted && lastRefresh && (
+              <p className="text-sm text-gray-500">Terakhir diperbarui: {lastRefresh.toLocaleTimeString('id-ID')}</p>
+            )}
           </div>
           <button 
             onClick={handleRefresh}

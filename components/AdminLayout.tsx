@@ -21,6 +21,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
   
   let settings = { site_name: 'TPQ AN-NABA' };
   let refreshSettings = () => {};
@@ -55,8 +56,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
       icon: '👨‍🏫',
       label: 'Pengajar',
       children: [
-        { href: '/admin/teachers', icon: '👥', label: 'Data Pengajar' },
-        { href: '/admin/teachers/schedule', icon: '📅', label: 'Jadwal Mengajar' }
+        { href: '/admin/teachers', icon: '👥', label: 'Data Pengajar' }
       ]
     },
     {
@@ -78,22 +78,30 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
   ];
 
   useEffect(() => {
-    checkAuthStatus();
-    // Selalu refresh settings di awal untuk mendapat data terbaru
-    if (refreshSettings && typeof refreshSettings === 'function') {
-      refreshSettings();
-    }
+    setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      checkAuthStatus();
+      // Selalu refresh settings di awal untuk mendapat data terbaru
+      if (refreshSettings && typeof refreshSettings === 'function') {
+        refreshSettings();
+      }
+    }
+  }, [mounted]);
 
   // Effect terpisah untuk update document title tanpa trigger refresh
   useEffect(() => {
-    if (typeof document !== 'undefined' && settings.site_name) {
+    if (mounted && typeof document !== 'undefined' && settings.site_name) {
       document.title = `${settings.site_name} - Admin Panel`;
     }
-  }, [settings.site_name]);
+  }, [mounted, settings.site_name]);
 
   const checkAuthStatus = async () => {
     try {
+      if (typeof window === 'undefined') return;
+      
       const token = localStorage.getItem('admin_token');
       const adminData = localStorage.getItem('admin_data');
       
@@ -111,8 +119,10 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_data');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_data');
+    }
     router.push('/admin/login');
   };
 
@@ -126,6 +136,15 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
 
   const isMenuExpanded = (label: string) => expandedMenus.includes(label);
   const isActive = (href: string) => currentPage === href || currentPage.startsWith(href + '/');
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -262,7 +281,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
           </nav>
 
           {/* Logout button */}
-          <div className="p-2 sm:p-4 border-t border-gray-200">
+          <div className="px-2 sm:px-4 pb-2 sm:pb-4">
             <button
               onClick={handleLogout}
               className="w-full flex items-center px-3 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors btn-touch"

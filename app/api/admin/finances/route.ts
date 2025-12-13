@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-const pool = require('@/lib/db');
+import pool from '@/lib/db';
+import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    let adminId;
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      adminId = decoded.adminId;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -29,10 +38,10 @@ export async function GET(request: NextRequest) {
         reference_number,
         created_at
       FROM finances 
-      WHERE admin_id = (SELECT id FROM admins LIMIT 1)
+      WHERE admin_id = $1
     `;
     
-    const params: any[] = [];
+    const params: any[] = [adminId];
     
     if (type && type !== 'all') {
       params.push(type);
@@ -50,17 +59,23 @@ export async function GET(request: NextRequest) {
     const result = await pool.query(query, params);
 
     // Get summary
-    const summaryQuery = `
+    let summaryQuery = `
       SELECT 
         type,
         SUM(amount) as total
       FROM finances 
-      WHERE admin_id = (SELECT id FROM admins LIMIT 1)
-      ${month && year ? `AND EXTRACT(YEAR FROM date) = $1 AND EXTRACT(MONTH FROM date) = $2` : ''}
-      GROUP BY type
+      WHERE admin_id = $1
     `;
     
-    const summaryParams = month && year ? [year, month] : [];
+    let summaryParams = [adminId];
+    
+    if (month && year) {
+      summaryParams.push(year, month);
+      summaryQuery += ` AND EXTRACT(YEAR FROM date) = $2 AND EXTRACT(MONTH FROM date) = $3`;
+    }
+    
+    summaryQuery += ` GROUP BY type`;
+    
     const summaryResult = await pool.query(summaryQuery, summaryParams);
     
     const summary = summaryResult.rows.reduce((acc: any, row: any) => {
@@ -87,10 +102,18 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    let adminId;
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      adminId = decoded.adminId;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
     const { 
@@ -111,16 +134,6 @@ export async function POST(request: NextRequest) {
     }
 
     const transactionDate = date || new Date().toISOString().split('T')[0];
-
-    // Pastikan ada admin di database
-    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
-    if (adminCheck.rows.length === 0) {
-      return NextResponse.json({ 
-        error: 'Admin tidak ditemukan. Silakan login ulang.' 
-      }, { status: 400 });
-    }
-    
-    const adminId = adminCheck.rows[0].id;
 
     const result = await pool.query(`
       INSERT INTO finances (
@@ -156,10 +169,18 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    let adminId;
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      adminId = decoded.adminId;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
     const { 
@@ -176,16 +197,6 @@ export async function PUT(request: NextRequest) {
         error: 'Tipe, kategori, dan jumlah wajib diisi' 
       }, { status: 400 });
     }
-
-    // Pastikan ada admin di database
-    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
-    if (adminCheck.rows.length === 0) {
-      return NextResponse.json({ 
-        error: 'Admin tidak ditemukan. Silakan login ulang.' 
-      }, { status: 400 });
-    }
-    
-    const adminId = adminCheck.rows[0].id;
 
     const result = await pool.query(`
       UPDATE finances SET
@@ -229,27 +240,26 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { financeId } = await request.json();
+    const token = authHeader.substring(7);
+    let adminId;
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      adminId = decoded.adminId;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const financeId = searchParams.get('id');
 
     if (!financeId) {
       return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 });
     }
-
-    // Pastikan ada admin di database
-    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
-    if (adminCheck.rows.length === 0) {
-      return NextResponse.json({ 
-        error: 'Admin tidak ditemukan. Silakan login ulang.' 
-      }, { status: 400 });
-    }
-    
-    const adminId = adminCheck.rows[0].id;
 
     const result = await pool.query(`
       DELETE FROM finances 

@@ -13,18 +13,14 @@ interface Achievement {
 
 export default function AchievementsPage() {
   const [mounted, setMounted] = useState(false);
-  const [achievements, setAchievements] = useState<Achievement[]>([
-    { id: 1, title: 'Juara 1 Lomba MTQ Tingkat Kecamatan', year: '2024', category: 'Kompetisi', description: 'Santri TPQ meraih juara 1 dalam lomba Musabaqah Tilawatil Quran tingkat kecamatan' },
-    { id: 2, title: 'Akreditasi A dari Kemenag', year: '2023', category: 'Institusional', description: 'TPQ mendapat akreditasi A dari Kementerian Agama' },
-    { id: 3, title: 'Best TPQ Award', year: '2023', category: 'Penghargaan', description: 'Mendapat penghargaan TPQ terbaik dari Yayasan Pendidikan Islam' },
-    { id: 4, title: 'Hafidz Cilik Terbaik', year: '2024', category: 'Prestasi Santri', description: '5 santri berhasil menyelesaikan hafalan 5 juz Al-Quran' }
-  ]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
   const [editingAchievement, setEditingAchievement] = useState<Achievement | null>(null);
   const [formData, setFormData] = useState({
     title: '',
-    year: new Date().getFullYear().toString(),
+    year: '', // Will be set when mounted
     category: '',
     description: ''
   });
@@ -34,17 +30,57 @@ export default function AchievementsPage() {
 
   useEffect(() => {
     setMounted(true);
+    // Set default year when component mounts
+    setFormData(prev => ({
+      ...prev,
+      year: new Date().getFullYear().toString()
+    }));
+    fetchAchievements();
   }, []);
 
-  if (!mounted) {
-    return null; // Prevent hydration mismatch
+  const fetchAchievements = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        alert('Anda harus login terlebih dahulu');
+        return;
+      }
+
+      const response = await fetch('/api/admin/achievements', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setAchievements(result.data);
+      } else {
+        console.error('Failed to fetch achievements:', result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching achievements:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!mounted || isLoading) {
+    return (
+      <AdminLayout currentPage="/admin/profile/achievements">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+        </div>
+      </AdminLayout>
+    );
   }
 
   const handleAdd = () => {
     setEditingAchievement(null);
     setFormData({
       title: '',
-      year: new Date().getFullYear().toString(),
+      year: mounted ? new Date().getFullYear().toString() : '',
       category: '',
       description: ''
     });
@@ -62,23 +98,71 @@ export default function AchievementsPage() {
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (editingAchievement) {
-      setAchievements(prev => prev.map(achievement => 
-        achievement.id === editingAchievement.id 
-          ? { ...achievement, ...formData }
-          : achievement
-      ));
-    } else {
-      const newId = Math.max(...achievements.map(a => a.id), 0) + 1;
-      setAchievements(prev => [...prev, { id: newId, ...formData }]);
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        alert('Anda harus login terlebih dahulu');
+        return;
+      }
+
+      const url = '/api/admin/achievements';
+      const method = editingAchievement ? 'PUT' : 'POST';
+      const payload = editingAchievement 
+        ? { id: editingAchievement.id, ...formData }
+        : formData;
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert(result.message);
+        await fetchAchievements(); // Refresh data
+        setShowModal(false);
+      } else {
+        alert(result.error || 'Gagal menyimpan data');
+      }
+    } catch (error) {
+      console.error('Error saving achievement:', error);
+      alert('Terjadi kesalahan saat menyimpan data');
     }
-    setShowModal(false);
   };
 
-  const handleDelete = (id: number) => {
-    setAchievements(prev => prev.filter(achievement => achievement.id !== id));
-    setShowDeleteConfirm(null);
+  const handleDelete = async (id: number) => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        alert('Anda harus login terlebih dahulu');
+        return;
+      }
+
+      const response = await fetch(`/api/admin/achievements/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert(result.message);
+        await fetchAchievements(); // Refresh data
+        setShowDeleteConfirm(null);
+      } else {
+        alert(result.error || 'Gagal menghapus prestasi');
+      }
+    } catch (error) {
+      console.error('Error deleting achievement:', error);
+      alert('Terjadi kesalahan saat menghapus prestasi');
+    }
   };
 
   return (

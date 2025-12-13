@@ -226,6 +226,18 @@ CREATE TABLE IF NOT EXISTS schedules (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Organization structure table (Isolated per admin)
+CREATE TABLE IF NOT EXISTS organization_structure (
+    id SERIAL PRIMARY KEY,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE,
+    position VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_students_admin_id ON students(admin_id);
 CREATE INDEX IF NOT EXISTS idx_teachers_admin_id ON teachers(admin_id);
@@ -238,6 +250,7 @@ CREATE INDEX IF NOT EXISTS idx_tpq_settings_admin_id ON tpq_settings(admin_id);
 CREATE INDEX IF NOT EXISTS idx_finances_admin_id ON finances(admin_id);
 CREATE INDEX IF NOT EXISTS idx_finances_date ON finances(date);
 CREATE INDEX IF NOT EXISTS idx_finances_type ON finances(type);
+CREATE INDEX IF NOT EXISTS idx_organization_structure_admin_id ON organization_structure(admin_id);
 
 -- Insert sample admin (remove in production)
 INSERT INTO admins (name, email, password, tpq_name, phone, address) 

@@ -34,12 +34,24 @@ function AddFinanceModal({ isOpen, onClose, onSave, editData }: AddModalProps) {
     category: '',
     amount: '',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: '', // Will be set when mounted
     payment_method: 'cash',
     reference_number: ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
+
+  // Initialize date when component mounts
+  useEffect(() => {
+    setMounted(true);
+    if (!editData) {
+      setFormData(prev => ({
+        ...prev,
+        date: new Date().toISOString().split('T')[0]
+      }));
+    }
+  }, []);
 
   const incomeCategories = [
     'SPP/Biaya Pendidikan',
@@ -79,7 +91,7 @@ function AddFinanceModal({ isOpen, onClose, onSave, editData }: AddModalProps) {
         payment_method: editData.payment_method || 'cash',
         reference_number: editData.reference_number || ''
       });
-    } else {
+    } else if (mounted) {
       setFormData({
         type: 'income',
         category: '',
@@ -91,7 +103,7 @@ function AddFinanceModal({ isOpen, onClose, onSave, editData }: AddModalProps) {
       });
     }
     setError('');
-  }, [editData, isOpen]);
+  }, [editData, isOpen, mounted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -314,13 +326,21 @@ export default function AdminFinancesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
   const [filterMonth, setFilterMonth] = useState('');
-  const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
+  const [filterYear, setFilterYear] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editData, setEditData] = useState<Finance | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    fetchFinances();
-  }, [filterType, filterMonth, filterYear]);
+    setMounted(true);
+    setFilterYear(new Date().getFullYear().toString());
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      fetchFinances();
+    }
+  }, [filterType, filterMonth, filterYear, mounted]);
 
   const fetchFinances = async () => {
     try {
@@ -363,13 +383,12 @@ export default function AdminFinancesPage() {
       // Simpan data yang akan dihapus untuk update summary
       const financeToDelete = finances.find(f => f.id === financeId);
       
-      const response = await fetch('/api/admin/finances', {
+      const response = await fetch(`/api/admin/finances?id=${financeId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ financeId })
+        }
       });
 
       if (response.ok) {
@@ -530,37 +549,64 @@ export default function AdminFinancesPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-          <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 sm:p-6 rounded-lg text-white">
+          {/* Pemasukan Card */}
+          <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl text-white shadow-lg">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-xs sm:text-sm">Total Pemasukan</p>
-                <p className="text-xl sm:text-3xl font-bold">{formatCurrency(summary.income)}</p>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="text-2xl">💰</div>
+                  <p className="text-green-100 font-medium">Total Pemasukan</p>
+                </div>
+                <p className="text-2xl sm:text-3xl font-bold mb-1">
+                  Rp {summary.income.toLocaleString('id-ID')}
+                </p>
+                <p className="text-green-200 text-sm">Bulan {filterMonth ? months.find(m => m.value === filterMonth)?.label : 'Ini'} {filterYear}</p>
               </div>
-              <div className="text-2xl sm:text-4xl">📈</div>
+              <div className="text-4xl opacity-20">📈</div>
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-red-500 to-red-600 p-4 sm:p-6 rounded-lg text-white">
+          {/* Pengeluaran Card */}
+          <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-xl text-white shadow-lg">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-red-100 text-xs sm:text-sm">Total Pengeluaran</p>
-                <p className="text-xl sm:text-3xl font-bold">{formatCurrency(summary.expense)}</p>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="text-2xl">💸</div>
+                  <p className="text-red-100 font-medium">Total Pengeluaran</p>
+                </div>
+                <p className="text-2xl sm:text-3xl font-bold mb-1">
+                  Rp {summary.expense.toLocaleString('id-ID')}
+                </p>
+                <p className="text-red-200 text-sm">Bulan {filterMonth ? months.find(m => m.value === filterMonth)?.label : 'Ini'} {filterYear}</p>
               </div>
-              <div className="text-2xl sm:text-4xl">📉</div>
+              <div className="text-4xl opacity-20">📉</div>
             </div>
           </div>
           
-          <div className={`bg-gradient-to-r p-4 sm:p-6 rounded-lg text-white ${
+          {/* Saldo Card */}
+          <div className={`bg-gradient-to-br p-6 rounded-xl text-white shadow-lg ${
             summary.balance >= 0 
               ? 'from-blue-500 to-blue-600' 
               : 'from-orange-500 to-orange-600'
           }`}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-xs sm:text-sm">Saldo</p>
-                <p className="text-xl sm:text-3xl font-bold">{formatCurrency(summary.balance)}</p>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="text-2xl">{summary.balance >= 0 ? '💎' : '⚠️'}</div>
+                  <p className={`font-medium ${
+                    summary.balance >= 0 ? 'text-blue-100' : 'text-orange-100'
+                  }`}>Saldo Akhir</p>
+                </div>
+                <p className="text-2xl sm:text-3xl font-bold mb-1">
+                  Rp {summary.balance.toLocaleString('id-ID')}
+                </p>
+                <p className={`text-sm ${
+                  summary.balance >= 0 ? 'text-blue-200' : 'text-orange-200'
+                }`}>
+                  {summary.balance >= 0 ? '✅ Surplus' : '⚠️ Defisit'}
+                </p>
               </div>
-              <div className="text-2xl sm:text-4xl">💰</div>
+              <div className="text-4xl opacity-20">{summary.balance >= 0 ? '📊' : '⚡'}</div>
             </div>
           </div>
         </div>
@@ -613,7 +659,9 @@ export default function AdminFinancesPage() {
                 onClick={() => {
                   setFilterType('all');
                   setFilterMonth('');
-                  setFilterYear(new Date().getFullYear().toString());
+                  if (mounted) {
+                    setFilterYear(new Date().getFullYear().toString());
+                  }
                 }}
                 className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
               >
@@ -625,8 +673,29 @@ export default function AdminFinancesPage() {
 
         {/* Finance Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          {finances.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">💰</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Data Keuangan</h3>
+              <p className="text-gray-500 mb-4">
+                {filterMonth || filterYear !== new Date().getFullYear().toString() 
+                  ? 'Tidak ada transaksi untuk periode yang dipilih'
+                  : 'Mulai tambahkan transaksi pemasukan dan pengeluaran TPQ'
+                }
+              </p>
+              <button
+                onClick={() => {
+                  setEditData(null);
+                  setIsAddModalOpen(true);
+                }}
+                className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                ➕ Tambah Transaksi Pertama
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -711,17 +780,10 @@ export default function AdminFinancesPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+              </table>
+            </div>
+          )}
         </div>
-
-        {finances.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">💰</div>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">Belum ada data keuangan</h3>
-            <p className="text-gray-600">Mulai dengan menambahkan transaksi pertama Anda</p>
-          </div>
-        )}
 
         <AddFinanceModal
           isOpen={isAddModalOpen}

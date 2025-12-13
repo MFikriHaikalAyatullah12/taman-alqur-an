@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-const pool = require('@/lib/db');
+import pool from '@/lib/db';
+import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    let adminId;
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      adminId = decoded.adminId;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
     const { id } = params;
@@ -22,14 +31,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Limit bio to 500 characters to prevent database error
     const limitedBio = bio ? bio.substring(0, 500) : '';
 
-    // Update teacher data
+    // Update teacher data untuk admin yang login
     const result = await pool.query(`
       UPDATE teachers 
       SET name = $1, email = $2, phone = $3, specialization = $4, 
           experience_years = $5, education = $6, bio = $7, photo_url = $8, updated_at = NOW()
-      WHERE id = $9 AND admin_id = (SELECT id FROM admins LIMIT 1)
+      WHERE id = $9 AND admin_id = $10
       RETURNING id, name, email, phone, specialization, experience_years, education, status, photo_url, bio
-    `, [name, email, phone || '', specialization || '', experience_years || 0, education || '', limitedBio, photo_url || '', id]);
+    `, [name, email, phone || '', specialization || '', experience_years || 0, education || '', limitedBio, photo_url || '', id, adminId]);
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Pengajar tidak ditemukan' }, { status: 404 });
@@ -43,6 +52,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   } catch (error) {
     console.error('Teacher update error:', error);
+    if (error.code === '23505') {
+      return NextResponse.json({ error: 'Email sudah terdaftar' }, { status: 400 });
+    }
     return NextResponse.json({ 
       error: 'Gagal mengupdate data pengajar' 
     }, { status: 500 });
@@ -52,20 +64,28 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    let adminId;
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      adminId = decoded.adminId;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
     const { id } = params;
 
-    // Delete teacher data
+    // Delete teacher data untuk admin yang login
     const result = await pool.query(`
       DELETE FROM teachers 
-      WHERE id = $1 AND admin_id = (SELECT id FROM admins LIMIT 1)
+      WHERE id = $1 AND admin_id = $2
       RETURNING id, name
-    `, [id]);
+    `, [id, adminId]);
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Pengajar tidak ditemukan' }, { status: 404 });

@@ -1,28 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-const pool = require('@/lib/db');
+import pool from '@/lib/db';
+import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Pastikan ada admin di database
-    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
-    if (adminCheck.rows.length === 0) {
-      return NextResponse.json({ 
-        error: 'Admin tidak ditemukan. Silakan login ulang.' 
-      }, { status: 400 });
-    }
-    
-    const adminId = adminCheck.rows[0].id;
+    const token = authHeader.substring(7);
+    let adminId;
 
-    // Get students data dengan struktur tabel yang ada
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      adminId = decoded.adminId;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Get students data untuk admin yang login saja
     const result = await pool.query(`
       SELECT 
         id, 
@@ -54,10 +53,18 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    let adminId;
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      adminId = decoded.adminId;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
     const { 
@@ -70,20 +77,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Pastikan ada admin di database
-    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
-    if (adminCheck.rows.length === 0) {
-      return NextResponse.json({ 
-        error: 'Admin tidak ditemukan. Silakan login ulang.' 
-      }, { status: 400 });
-    }
-    
-    const adminId = adminCheck.rows[0].id;
-
     // Gabungkan tempat dan tanggal lahir untuk address sementara
     const birthInfo = `${birth_place}, ${birth_date}`;
 
-    // Insert student dengan field yang ada di database
+    // Insert student untuk admin yang login
     const result = await pool.query(`
       INSERT INTO students (
         admin_id, name, address, birth_date, parent_name, parent_phone, status
@@ -125,10 +122,18 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
-    
-    if (!token) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    let adminId;
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      adminId = decoded.adminId;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
     const { studentId } = await request.json();
@@ -137,17 +142,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID santri tidak valid' }, { status: 400 });
     }
 
-    // Pastikan ada admin di database
-    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
-    if (adminCheck.rows.length === 0) {
-      return NextResponse.json({ 
-        error: 'Admin tidak ditemukan. Silakan login ulang.' 
-      }, { status: 400 });
-    }
-    
-    const adminId = adminCheck.rows[0].id;
-
-    // Delete student
+    // Delete student only for the logged in admin
     const result = await pool.query(`
       DELETE FROM students 
       WHERE id = $1 AND admin_id = $2
