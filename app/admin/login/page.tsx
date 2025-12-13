@@ -52,32 +52,43 @@ function AdminLoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 flex items-center justify-center p-3">
-      <div className="max-w-sm w-full">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-400 via-cyan-500 to-blue-600 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-4">
-          <h2 className="text-xl font-bold text-white">Login Admin</h2>
-          <p className="text-blue-100 text-xs">Panel administrasi</p>
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 mx-auto mb-4 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1M12 7C13.11 7 14 7.89 14 9S13.11 11 12 11 10 10.11 10 9 10.89 7 12 7M12 14C13.66 14 15 14.67 15 15.5V16H9V15.5C9 14.67 10.34 14 12 14Z" />
+            </svg>
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-2">Login Admin</h2>
+          <p className="text-white text-opacity-80">Panel administrasi TPQ AN-NABA</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-lg shadow-2xl p-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 backdrop-blur-sm bg-opacity-95">
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg mb-3 text-xs">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
               {error}
             </div>
           )}
 
           {success && (
-            <div className="bg-green-50 border border-green-200 text-green-600 px-3 py-2 rounded-lg mb-3 text-xs">
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
               {success}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-xs font-medium text-black mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Email
               </label>
               <input
@@ -85,13 +96,13 @@ function AdminLoginForm() {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-black"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:outline-none focus:ring-emerald-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 placeholder="admin@example.com"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-black mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Password
               </label>
               <input
@@ -99,7 +110,7 @@ function AdminLoginForm() {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-black"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:outline-none focus:ring-emerald-500 focus:border-transparent text-gray-900 placeholder-gray-400"
                 placeholder="Password"
               />
             </div>
@@ -107,15 +118,15 @@ function AdminLoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-2 px-4 rounded-md font-medium transition-all duration-300 text-xs ${
+              className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 text-sm ${
                 isLoading
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600'
+                  : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 hover:shadow-lg transform hover:-translate-y-0.5'
               } text-white shadow-md`}
             >
               {isLoading ? (
-                <div className="flex items-center justify-center space-x-1">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   <span>Masuk...</span>
                 </div>
               ) : (
@@ -124,24 +135,16 @@ function AdminLoginForm() {
             </button>
           </form>
 
-          <div className="mt-3 text-center">
-            <p className="text-xs text-black">
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
               Belum punya akun?{' '}
               <Link 
                 href="/admin/register" 
-                className="text-green-600 hover:text-green-700 font-medium"
+                className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline transition-colors"
               >
                 Daftar
               </Link>
             </p>
-            <div className="border-t border-gray-200 pt-2 mt-2">
-              <Link 
-                href="/" 
-                className="text-black hover:text-gray-700 text-xs"
-              >
-                ← Kembali ke Beranda
-              </Link>
-            </div>
           </div>
         </div>
       </div>
@@ -152,8 +155,11 @@ function AdminLoginForm() {
 export default function AdminLoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-400 via-cyan-500 to-blue-600 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+          <p className="text-white text-lg font-medium">Memuat...</p>
+        </div>
       </div>
     }>
       <AdminLoginForm />
