@@ -68,11 +68,11 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
       ]
     },
     {
-      href: '/admin/payments',
+      href: '/admin/finances',
       icon: '💰',
-      label: 'Pembayaran',
+      label: 'Keuangan',
       children: [
-        { href: '/admin/payments/donations', icon: '🤲', label: 'Donasi' }
+        { href: '/admin/finances', icon: '📊', label: 'Pemasukan & Pengeluaran' }
       ]
     }
   ];
@@ -129,6 +129,7 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile overlay */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -136,12 +137,14 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
         />
       )}
 
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-80 lg:w-64 bg-white shadow-xl lg:shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="flex flex-col h-full">
+          {/* Header */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 min-w-0">
               {settings && (settings as any)?.logo ? (
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border-2 border-blue-200 shadow-sm flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-white border-2 border-blue-200 shadow-sm flex-shrink-0">
                   <img 
                     src={(settings as any).logo} 
                     alt="Logo TAMAN PENDIDIKAN ALQUR'AN" 
@@ -162,23 +165,30 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
                   </div>
                 </div>
               ) : (
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-md">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-md">
                   🏫
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <h1 className="font-bold text-lg text-gray-800 truncate">Taman Pendidikan Alquran</h1>
+                <h1 className="font-bold text-base sm:text-lg text-gray-800 truncate leading-tight">TAMAN PENDIDIKAN ALQUR'AN</h1>
                 <p className="text-xs text-blue-600 font-medium">Panel Admin</p>
               </div>
             </div>
-            <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-gray-500 hover:text-gray-700 p-1 rounded">
-              ✕
+            <button 
+              onClick={() => setIsSidebarOpen(false)} 
+              className="lg:hidden text-gray-500 hover:text-gray-700 p-1.5 rounded-lg btn-touch"
+              aria-label="Tutup menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
-          <div className="p-4 border-b border-gray-200">
+          {/* User info */}
+          <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center font-semibold">
+              <div className="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm">
                 {user?.name?.charAt(0) || 'A'}
               </div>
               <div className="flex-1 min-w-0">
@@ -190,21 +200,22 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
             </div>
           </div>
 
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          {/* Navigation */}
+          <nav className="flex-1 p-2 sm:p-4 space-y-1 overflow-y-auto smooth-scroll">
             {menuItems.map((item) => (
               <div key={item.label}>
                 {item.children ? (
                   <div>
                     <button
                       onClick={() => toggleMenu(item.label)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-colors btn-touch"
                     >
                       <div className="flex items-center">
-                        <span className="mr-3 text-base">{item.icon}</span>
-                        {item.label}
+                        <span className="mr-3 text-lg">{item.icon}</span>
+                        <span className="truncate">{item.label}</span>
                       </div>
                       <svg
-                        className={`w-4 h-4 transition-transform ${isMenuExpanded(item.label) ? 'rotate-90' : ''}`}
+                        className={`w-4 h-4 transition-transform flex-shrink-0 ${isMenuExpanded(item.label) ? 'rotate-90' : ''}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -213,19 +224,20 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
                       </svg>
                     </button>
                     {isMenuExpanded(item.label) && (
-                      <div className="ml-6 mt-1 space-y-1">
+                      <div className="ml-4 sm:ml-6 mt-1 space-y-1">
                         {item.children.map((child) => (
                           <Link
                             key={child.href}
                             href={child.href}
-                            className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
+                            onClick={() => setIsSidebarOpen(false)}
+                            className={`flex items-center px-3 py-2.5 text-sm rounded-lg transition-colors btn-touch ${
                               isActive(child.href)
-                                ? 'bg-blue-50 text-blue-700 font-medium'
+                                ? 'bg-blue-50 text-blue-700 font-medium border-l-4 border-blue-500'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                             }`}
                           >
                             <span className="mr-3 text-sm">{child.icon}</span>
-                            {child.label}
+                            <span className="truncate">{child.label}</span>
                           </Link>
                         ))}
                       </div>
@@ -234,60 +246,83 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
                 ) : (
                   <Link
                     href={item.href}
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors btn-touch ${
                       isActive(item.href)
-                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        ? 'bg-blue-50 text-blue-700 font-medium border-l-4 border-blue-500'
                         : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <span className="mr-3 text-base">{item.icon}</span>
-                    {item.label}
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    <span className="truncate">{item.label}</span>
                   </Link>
                 )}
               </div>
             ))}
           </nav>
 
-          <div className="p-4 border-t border-gray-200">
+          {/* Logout button */}
+          <div className="p-2 sm:p-4 border-t border-gray-200">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+              className="w-full flex items-center px-3 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors btn-touch"
             >
               <span className="mr-3 text-lg">🚪</span>
-              Keluar
+              <span>Keluar</span>
             </button>
           </div>
         </div>
       </div>
 
+      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between px-6 py-3">
+        {/* Top header */}
+        <header className="bg-white shadow-sm border-b border-gray-200 safe-area-top">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden text-gray-500 hover:text-gray-700"
+                className="lg:hidden text-gray-500 hover:text-gray-700 p-2 rounded-lg btn-touch"
+                aria-label="Buka menu"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
+              <div className="hidden sm:block">
+                <h2 className="text-lg font-semibold text-gray-900 truncate">
+                  {currentPage.includes('dashboard') && 'Dashboard'}
+                  {currentPage.includes('students') && 'Data Santri'}
+                  {currentPage.includes('teachers') && 'Data Pengajar'}
+                  {currentPage.includes('finances') && 'Keuangan'}
+                  {currentPage.includes('profile') && 'Profil TPQ'}
+
+                </h2>
+              </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="text-xs sm:text-sm text-gray-500">
                 {new Date().toLocaleDateString('id-ID', {
                   weekday: 'short',
                   day: 'numeric',
                   month: 'short'
                 })}
               </div>
+              <div className="lg:hidden">
+                <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">
+                  {user?.name?.charAt(0) || 'A'}
+                </div>
+              </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-6 bg-gray-50">
-          {children}
+        {/* Main content area */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 safe-area-bottom">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

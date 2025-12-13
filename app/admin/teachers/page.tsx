@@ -515,93 +515,110 @@ export default function TeachersPage() {
           </div>
         </div>
 
-        {/* Teachers Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pengajar
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Kontak
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Spesialisasi
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pengalaman
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Aksi
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredTeachers.map((teacher) => (
-                  <tr key={teacher.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">
-                              {teacher.name.charAt(0)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
-                          <div className="text-sm text-gray-500">{teacher.education}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{teacher.email}</div>
-                      <div className="text-sm text-gray-500">{teacher.phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {teacher.specialization}
+        {/* Teachers Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">{filteredTeachers.map((teacher) => (
+            <div key={teacher.id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
+              {/* Card Header */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-4 sm:px-6 py-4">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+                      <span className="text-base sm:text-lg font-bold text-white">
+                        {teacher.name.charAt(0)}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {teacher.experience_years} tahun
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        teacher.status === 'Aktif' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {teacher.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => openEditModal(teacher)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTeacher(teacher.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold text-white truncate">{teacher.name}</h3>
+                    <p className="text-blue-100 text-xs sm:text-sm truncate">{teacher.education}</p>
+                  </div>
+                  <div>
+                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
+                      teacher.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {teacher.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Body */}
+              <div className="px-4 sm:px-6 py-4 space-y-3 sm:space-y-4">
+                {/* Contact Info */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 text-xs sm:text-sm">
+                    <span className="text-gray-400">📧</span>
+                    <span className="text-gray-600 truncate">{teacher.email}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-xs sm:text-sm">
+                    <span className="text-gray-400">📞</span>
+                    <span className="text-gray-600">{teacher.phone}</span>
+                  </div>
+                </div>
+
+                {/* Specialization */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs sm:text-sm text-gray-500">Spesialisasi:</span>
+                  <span className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                    {teacher.specialization}
+                  </span>
+                </div>
+
+                {/* Experience */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs sm:text-sm text-gray-500">Pengalaman:</span>
+                  <span className="text-xs sm:text-sm font-medium text-gray-900">
+                    🎓 {teacher.experience_years} tahun
+                  </span>
+                </div>
+
+                {/* Bio */}
+                {teacher.bio && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-xs text-gray-600 line-clamp-2">{teacher.bio}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Card Actions */}
+              <div className="px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-100">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => openEditModal(teacher)}
+                    className="flex-1 px-3 py-2 bg-blue-500 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center space-x-1"
+                  >
+                    <span>✏️</span>
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTeacher(teacher.id)}
+                    className="flex-1 px-3 py-2 bg-red-500 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center space-x-1"
+                  >
+                    <span>🗑️</span>
+                    <span>Hapus</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* Empty State */}
+        {filteredTeachers.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-6xl mb-4">👨‍🏫</div>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">Belum ada data pengajar</h3>
+            <p className="text-gray-600 mb-4">Mulai dengan menambahkan pengajar pertama Anda</p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              ➕ Tambah Pengajar
+            </button>
+          </div>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

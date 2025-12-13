@@ -3,41 +3,41 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 
-interface DashboardStats {
-  totalStudents: number;
-  totalTeachers: number;
-  pendingRegistrations: number;
-  activePrograms: number;
-  monthlyRevenue: number;
-  recentActivities: any[];
+interface DashboardData {
+  students: {
+    total: number;
+    active: number;
+  };
+  teachers: {
+    total: number;
+    avgExperience: number;
+  };
+  finances: {
+    income: number;
+    expense: number;
+    balance: number;
+    transactions: number;
+  };
+  lastUpdated: string;
 }
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalStudents: 0,
-    totalTeachers: 0,
-    pendingRegistrations: 0,
-    activePrograms: 0,
-    monthlyRevenue: 0,
-    recentActivities: []
-  });
+export default function AdminDashboardPage() {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Auto refresh setiap 30 detik
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('admin_token');
-      if (!token) {
-        console.error('No admin token found');
-        setIsLoading(false);
-        return;
-      }
-
       const response = await fetch('/api/admin/dashboard', {
-        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -45,57 +45,23 @@ export default function AdminDashboard() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setStats(data.data);
+        const result = await response.json();
+        setDashboardData(result.data);
+        setLastRefresh(new Date());
       } else {
         console.error('Failed to fetch dashboard data');
-        // Fallback to demo data if API fails
-        setStats({
-          totalStudents: 0,
-          totalTeachers: 0,
-          pendingRegistrations: 0,
-          activePrograms: 0,
-          monthlyRevenue: 0,
-          recentActivities: []
-        });
       }
-      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const quickActions = [
-    {
-      title: 'Tambah Santri',
-      description: 'Daftarkan santri baru',
-      icon: '👨‍🎓',
-      href: '/admin/students/add',
-      color: 'bg-blue-500'
-    },
-    {
-      title: 'Buat Artikel',
-      description: 'Tulis berita atau pengumuman',
-      icon: '✍️',
-      href: '/admin/news/create',
-      color: 'bg-green-500'
-    },
-    {
-      title: 'Upload Galeri',
-      description: 'Tambah foto/video kegiatan',
-      icon: '📷',
-      href: '/admin/gallery/upload',
-      color: 'bg-purple-500'
-    },
-    {
-      title: 'Buat Jadwal',
-      description: 'Tambah kegiatan baru',
-      icon: '📅',
-      href: '/admin/schedule/events',
-      color: 'bg-orange-500'
-    }
-  ];
+  const handleRefresh = () => {
+    setIsLoading(true);
+    fetchDashboardData();
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -104,24 +70,7 @@ export default function AdminDashboard() {
     }).format(amount);
   };
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'student_registration':
-        return '👨‍🎓';
-      case 'payment':
-        return '💰';
-      case 'progress':
-        return '📊';
-      case 'event':
-        return '📅';
-      case 'news':
-        return '📰';
-      default:
-        return 'ℹ️';
-    }
-  };
-
-  if (isLoading) {
+  if (isLoading && !dashboardData) {
     return (
       <AdminLayout currentPage="/admin/dashboard">
         <div className="flex items-center justify-center h-64">
@@ -134,193 +83,131 @@ export default function AdminDashboard() {
   return (
     <AdminLayout currentPage="/admin/dashboard">
       <div className="space-y-6">
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl p-6 text-white">
-          <h1 className="text-3xl font-bold mb-2">
-            Selamat Datang di Admin Panel! 👋
-          </h1>
-          <p className="text-white/90 text-lg">
-            Kelola TPQ Al-Hikmah dengan mudah dan efisien
-          </p>
+        {/* Header dengan tombol refresh */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600">Ringkasan data TPQ secara realtime</p>
+            <p className="text-sm text-gray-500">Terakhir diperbarui: {lastRefresh.toLocaleTimeString('id-ID')}</p>
+          </div>
+          <button 
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2"
+            disabled={isLoading}
+          >
+            <span className={isLoading ? "animate-spin" : ""}>🔄</span>
+            <span>Refresh Data</span>
+          </button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {/* Students Card */}
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 sm:p-6 rounded-lg text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Santri</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalStudents}</p>
+                <p className="text-blue-100 text-xs sm:text-sm">Total Santri</p>
+                <p className="text-2xl sm:text-3xl font-bold">{dashboardData?.students.total || 0}</p>
+                <p className="text-blue-100 text-xs">Aktif: {dashboardData?.students.active || 0}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 text-2xl">👨‍🎓</span>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center">
-              <span className="text-green-500 text-sm font-medium">+12%</span>
-              <span className="text-gray-500 text-sm ml-1">dari bulan lalu</span>
+              <div className="text-2xl sm:text-4xl">👨‍🎓</div>
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          
+          {/* Teachers Card */}
+          <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 sm:p-6 rounded-lg text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Pengajar</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalTeachers}</p>
+                <p className="text-green-100 text-xs sm:text-sm">Total Pengajar</p>
+                <p className="text-2xl sm:text-3xl font-bold">{dashboardData?.teachers.total || 0}</p>
+                <p className="text-green-100 text-xs">Rata-rata {dashboardData?.teachers.avgExperience || 0} tahun</p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 text-2xl">👨‍🏫</span>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center">
-              <span className="text-green-500 text-sm font-medium">+2</span>
-              <span className="text-gray-500 text-sm ml-1">pengajar baru</span>
+              <div className="text-2xl sm:text-4xl">👨‍🏫</div>
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          
+          {/* Income Card */}
+          <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-4 sm:p-6 rounded-lg text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pendaftaran Pending</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.pendingRegistrations}</p>
+                <p className="text-purple-100 text-xs sm:text-sm">Pemasukan Bulan Ini</p>
+                <p className="text-lg sm:text-xl font-bold">
+                  Rp {(dashboardData?.finances.income || 0).toLocaleString('id-ID')}
+                </p>
+                <p className="text-purple-100 text-xs">{dashboardData?.finances.transactions || 0} transaksi</p>
               </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <span className="text-yellow-600 text-2xl">📝</span>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center">
-              <span className="text-yellow-500 text-sm font-medium">Perlu review</span>
+              <div className="text-2xl sm:text-4xl">💰</div>
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          
+          {/* Balance Card */}
+          <div className={`bg-gradient-to-r p-4 sm:p-6 rounded-lg text-white ${
+            (dashboardData?.finances.balance || 0) >= 0 
+              ? 'from-teal-500 to-teal-600' 
+              : 'from-red-500 to-red-600'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pendapatan Bulan Ini</p>
-                <p className="text-lg font-bold text-gray-900">{formatCurrency(stats.monthlyRevenue)}</p>
+                <p className="text-teal-100 text-xs sm:text-sm">Saldo Bulan Ini</p>
+                <p className="text-lg sm:text-xl font-bold">
+                  Rp {(dashboardData?.finances.balance || 0).toLocaleString('id-ID')}
+                </p>
+                <p className="text-teal-100 text-xs">
+                  {(dashboardData?.finances.balance || 0) >= 0 ? 'Surplus' : 'Defisit'}
+                </p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-purple-600 text-2xl">💰</span>
-              </div>
+              <div className="text-2xl sm:text-4xl">📊</div>
             </div>
-            <div className="mt-4 flex items-center">
-              <span className="text-green-500 text-sm font-medium">+8%</span>
-              <span className="text-gray-500 text-sm ml-1">dari target</span>
+          </div>
+        </div>
+
+        {/* Detailed Finance Summary */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">📈 Ringkasan Keuangan Bulan Ini</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600">
+                Rp {(dashboardData?.finances.income || 0).toLocaleString('id-ID')}
+              </div>
+              <div className="text-sm text-gray-500">Total Pemasukan</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-red-600">
+                Rp {(dashboardData?.finances.expense || 0).toLocaleString('id-ID')}
+              </div>
+              <div className="text-sm text-gray-500">Total Pengeluaran</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-3xl font-bold ${
+                (dashboardData?.finances.balance || 0) >= 0 ? 'text-blue-600' : 'text-red-600'
+              }`}>
+                Rp {(dashboardData?.finances.balance || 0).toLocaleString('id-ID')}
+              </div>
+              <div className="text-sm text-gray-500">Saldo Akhir</div>
             </div>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
-              <a
-                key={index}
-                href={action.href}
-                className="group p-4 rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200 hover:-translate-y-1"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center text-white text-xl`}>
-                    {action.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 group-hover:text-green-600">
-                      {action.title}
-                    </h3>
-                    <p className="text-sm text-gray-500">{action.description}</p>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activities and Overview */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Recent Activities */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Aktivitas Terbaru</h2>
-            <div className="space-y-4">
-              {stats.recentActivities.map((activity: any) => (
-                <div key={activity.id} className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm">{getActivityIcon(activity.type)}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">{activity.message}</p>
-                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <a href="/admin/activities" className="text-sm text-green-600 hover:text-green-700 font-medium">
-                Lihat semua aktivitas →
-              </a>
-            </div>
-          </div>
-
-          {/* Quick Overview */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Ringkasan Hari Ini</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <span className="text-blue-600">📚</span>
-                  <span className="text-sm font-medium text-gray-900">Kelas Hari Ini</span>
-                </div>
-                <span className="text-sm font-bold text-blue-600">8 Kelas</span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <span className="text-green-600">👨‍🎓</span>
-                  <span className="text-sm font-medium text-gray-900">Santri Hadir</span>
-                </div>
-                <span className="text-sm font-bold text-green-600">98 dari 105</span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <span className="text-yellow-600">📝</span>
-                  <span className="text-sm font-medium text-gray-900">Ujian Terjadwal</span>
-                </div>
-                <span className="text-sm font-bold text-yellow-600">3 Ujian</span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <span className="text-purple-600">🎉</span>
-                  <span className="text-sm font-medium text-gray-900">Event Mendatang</span>
-                </div>
-                <span className="text-sm font-bold text-purple-600">Wisuda Santri</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Calendar Widget */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Jadwal Minggu Ini</h2>
-          <div className="grid grid-cols-7 gap-4">
-            {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map((day, index) => (
-              <div key={day} className="text-center">
-                <div className="text-sm font-medium text-gray-600 mb-2">{day}</div>
-                <div className={`w-10 h-10 mx-auto rounded-lg flex items-center justify-center text-sm font-medium ${
-                  index === new Date().getDay() - 1 
-                    ? 'bg-green-500 text-white' 
-                    : 'bg-gray-100 text-gray-900'
-                }`}>
-                  {new Date().getDate() + index - new Date().getDay() + 1}
-                </div>
-                {index < 5 && (
-                  <div className="mt-1 text-xs text-green-600">
-                    {index < 3 ? '8 kelas' : index === 3 ? '6 kelas' : '4 kelas'}
-                  </div>
-                )}
-              </div>
-            ))}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">⚡ Aksi Cepat</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="/admin/students" className="p-4 bg-blue-50 rounded-lg text-center hover:bg-blue-100 transition-colors">
+              <div className="text-2xl mb-2">👨‍🎓</div>
+              <div className="text-sm font-medium text-blue-800">Kelola Santri</div>
+            </a>
+            <a href="/admin/teachers" className="p-4 bg-green-50 rounded-lg text-center hover:bg-green-100 transition-colors">
+              <div className="text-2xl mb-2">👨‍🏫</div>
+              <div className="text-sm font-medium text-green-800">Kelola Pengajar</div>
+            </a>
+            <a href="/admin/finances" className="p-4 bg-purple-50 rounded-lg text-center hover:bg-purple-100 transition-colors">
+              <div className="text-2xl mb-2">💰</div>
+              <div className="text-sm font-medium text-purple-800">Kelola Keuangan</div>
+            </a>
+            <a href="/admin/settings" className="p-4 bg-gray-50 rounded-lg text-center hover:bg-gray-100 transition-colors">
+              <div className="text-2xl mb-2">⚙️</div>
+              <div className="text-sm font-medium text-gray-800">Pengaturan</div>
+            </a>
           </div>
         </div>
       </div>

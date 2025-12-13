@@ -12,14 +12,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
     }
 
-    // Get students data with minimal columns
-    const result = await pool.query(`
-      SELECT * FROM students 
-      WHERE admin_id = (SELECT id FROM admins LIMIT 1)
-      ORDER BY id ASC
-    `);
+    // Pastikan ada admin di database
+    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
+    if (adminCheck.rows.length === 0) {
+      return NextResponse.json({ 
+        error: 'Admin tidak ditemukan. Silakan login ulang.' 
+      }, { status: 400 });
+    }
+    
+    const adminId = adminCheck.rows[0].id;
 
-    return NextResponse.json({ success: true, data: result.rows });
+    // Get students data dengan struktur tabel yang ada
+    const result = await pool.query(`
+      SELECT 
+        id, 
+        name, 
+        phone, 
+        address,
+        birth_date,
+        parent_name,
+        parent_phone,
+        enrollment_date,
+        status,
+        created_at,
+        updated_at
+      FROM students 
+      WHERE admin_id = $1
+      ORDER BY id DESC
+    `, [adminId]);
+
+    return NextResponse.json({ success: true, students: result.rows });
 
   } catch (error) {
     console.error('Students fetch error:', error);
@@ -39,30 +61,59 @@ export async function POST(request: NextRequest) {
     }
 
     const { 
-      name, address, birth_date, 
-      parent_job, parent_phone, level 
+      name, birth_place, birth_date, parent_name, parent_phone
     } = await request.json();
 
-    if (!name) {
-      return NextResponse.json({ error: 'Nama wajib diisi' }, { status: 400 });
+    if (!name || !birth_place || !birth_date || !parent_name) {
+      return NextResponse.json({ 
+        error: 'Nama santri, tempat lahir, tanggal lahir, dan nama orang tua wajib diisi' 
+      }, { status: 400 });
     }
 
-    // Try simple insert with basic fields
+    // Pastikan ada admin di database
+    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
+    if (adminCheck.rows.length === 0) {
+      return NextResponse.json({ 
+        error: 'Admin tidak ditemukan. Silakan login ulang.' 
+      }, { status: 400 });
+    }
+    
+    const adminId = adminCheck.rows[0].id;
+
+    // Gabungkan tempat dan tanggal lahir untuk address sementara
+    const birthInfo = `${birth_place}, ${birth_date}`;
+
+    // Insert student dengan field yang ada di database
     const result = await pool.query(`
-      INSERT INTO students (admin_id, name)
-      VALUES ((SELECT id FROM admins LIMIT 1), $1)
-      RETURNING *
-    `, [name]);
+      INSERT INTO students (
+        admin_id, name, address, birth_date, parent_name, parent_phone, status
+      )
+      VALUES (
+        $1, $2, $3, $4, $5, $6, 'active'
+      )
+      RETURNING 
+        id, 
+        name,
+        address,
+        birth_date,
+        parent_name,
+        parent_phone,
+        enrollment_date,
+        status,
+        created_at
+    `, [
+      adminId, name, birthInfo, birth_date, parent_name, parent_phone || ''
+    ]);
 
     return NextResponse.json({ 
       success: true, 
       message: 'Santri berhasil ditambahkan',
       data: result.rows[0]
-    });
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Student creation error:', error);
-    if (error.code === '23505') { // Unique constraint violation
+    if (error.code === '23505') {
       return NextResponse.json({ error: 'Data santri sudah terdaftar' }, { status: 400 });
     }
     return NextResponse.json({ 
@@ -86,12 +137,22 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID santri tidak valid' }, { status: 400 });
     }
 
+    // Pastikan ada admin di database
+    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
+    if (adminCheck.rows.length === 0) {
+      return NextResponse.json({ 
+        error: 'Admin tidak ditemukan. Silakan login ulang.' 
+      }, { status: 400 });
+    }
+    
+    const adminId = adminCheck.rows[0].id;
+
     // Delete student
     const result = await pool.query(`
       DELETE FROM students 
-      WHERE id = $1 AND admin_id = (SELECT id FROM admins LIMIT 1)
-      RETURNING *
-    `, [studentId]);
+      WHERE id = $1 AND admin_id = $2
+      RETURNING name
+    `, [studentId, adminId]);
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Santri tidak ditemukan' }, { status: 404 });

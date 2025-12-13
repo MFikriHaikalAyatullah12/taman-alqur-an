@@ -12,52 +12,79 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Token tidak valid' }, { status: 401 });
     }
 
-    // Get dashboard statistics from database
-    const [studentsResult, teachersResult, pendingRegistrationsResult] = await Promise.all([
-      pool.query('SELECT COUNT(*) as count FROM students WHERE admin_id = (SELECT id FROM admins WHERE id = $1)', [1]), // Assuming admin_id 1 for now
-      pool.query('SELECT COUNT(*) as count FROM teachers WHERE admin_id = (SELECT id FROM admins WHERE id = $1)', [1]),
-      pool.query('SELECT COUNT(*) as count FROM students WHERE status = $1 AND admin_id = (SELECT id FROM admins WHERE id = $2)', ['pending', 1])
-    ]);
+    // Pastikan ada admin di database
+    const adminCheck = await pool.query('SELECT id FROM admins LIMIT 1');
+    if (adminCheck.rows.length === 0) {
+      return NextResponse.json({ 
+        error: 'Admin tidak ditemukan. Silakan login ulang.' 
+      }, { status: 400 });
+    }
+    
+    const adminId = adminCheck.rows[0].id;
 
-    // Get recent activities (simplified for now)
-    const recentActivities = await pool.query(`
-      SELECT 'student' as type, name as message, created_at 
+    // Get students statistics
+    const studentsResult = await pool.query(`
+      SELECT 
+        COUNT(*) as total_students,
+        COUNT(CASE WHEN status = 'active' THEN 1 END) as active_students
       FROM students 
-      WHERE admin_id = $1 
-      ORDER BY created_at DESC 
-      LIMIT 5
-    `, [1]);
+      WHERE admin_id = $1
+    `, [adminId]);
 
-    const stats = {
-      totalStudents: parseInt(studentsResult.rows[0]?.count || 0),
-      totalTeachers: parseInt(teachersResult.rows[0]?.count || 0),
-      pendingRegistrations: parseInt(pendingRegistrationsResult.rows[0]?.count || 0),
-      activePrograms: 6, // Static for now
-      monthlyRevenue: 0, // Will be calculated from payments table when implemented
-      recentActivities: recentActivities.rows.map(activity => ({
-        id: Date.now() + Math.random(),
-        type: activity.type,
-        message: `${activity.message} terdaftar sebagai santri baru`,
-        time: formatTimeAgo(activity.created_at)
-      }))
+    // Get teachers statistics
+    const teachersResult = await pool.query(`
+      SELECT 
+        COUNT(*) as total_teachers,
+        AVG(experience_years) as avg_experience
+      FROM teachers 
+      WHERE admin_id = $1
+    `, [adminId]);
+
+    // Get finances statistics
+    const financesResult = await pool.query(`
+      SELECT 
+        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
+        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expense,
+        COUNT(*) as total_transactions
+      FROM finances 
+      WHERE admin_id = $1
+        AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)
+        AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)
+    `, [adminId]);
+
+    const students = studentsResult.rows[0] || { total_students: 0, active_students: 0 };
+    const teachers = teachersResult.rows[0] || { total_teachers: 0, avg_experience: 0 };
+    const finances = financesResult.rows[0] || { total_income: 0, total_expense: 0, total_transactions: 0 };
+
+    const balance = parseFloat(finances.total_income || 0) - parseFloat(finances.total_expense || 0);
+
+    const dashboard = {
+      students: {
+        total: parseInt(students.total_students),
+        active: parseInt(students.active_students)
+      },
+      teachers: {
+        total: parseInt(teachers.total_teachers),
+        avgExperience: Math.round(parseFloat(teachers.avg_experience || 0))
+      },
+      finances: {
+        income: parseFloat(finances.total_income || 0),
+        expense: parseFloat(finances.total_expense || 0),
+        balance: balance,
+        transactions: parseInt(finances.total_transactions)
+      },
+      lastUpdated: new Date().toISOString()
     };
 
-    return NextResponse.json({ success: true, data: stats });
+    return NextResponse.json({ 
+      success: true, 
+      data: dashboard
+    });
 
   } catch (error) {
-    console.error('Dashboard stats error:', error);
+    console.error('Dashboard fetch error:', error);
     return NextResponse.json({ 
       error: 'Gagal mengambil data dashboard' 
     }, { status: 500 });
   }
-}
-
-function formatTimeAgo(date: Date): string {
-  const now = new Date();
-  const diff = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
-  
-  if (diff < 60) return `${diff} detik yang lalu`;
-  if (diff < 3600) return `${Math.floor(diff / 60)} menit yang lalu`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} jam yang lalu`;
-  return `${Math.floor(diff / 86400)} hari yang lalu`;
 }

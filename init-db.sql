@@ -193,6 +193,21 @@ CREATE TABLE IF NOT EXISTS student_progress (
     assessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Finances table (Isolated per admin) - Income and Expense Management
+CREATE TABLE IF NOT EXISTS finances (
+    id SERIAL PRIMARY KEY,
+    admin_id INTEGER REFERENCES admins(id) ON DELETE CASCADE,
+    type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
+    category VARCHAR(100) NOT NULL,
+    amount DECIMAL(15,2) NOT NULL CHECK (amount > 0),
+    description TEXT,
+    date DATE DEFAULT CURRENT_DATE,
+    payment_method VARCHAR(50) DEFAULT 'cash',
+    reference_number VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Schedules table (Isolated per admin)
 CREATE TABLE IF NOT EXISTS schedules (
     id SERIAL PRIMARY KEY,
@@ -220,6 +235,9 @@ CREATE INDEX IF NOT EXISTS idx_testimonials_admin_id ON testimonials(admin_id);
 CREATE INDEX IF NOT EXISTS idx_schedules_admin_id ON schedules(admin_id);
 CREATE INDEX IF NOT EXISTS idx_curriculum_admin_id ON curriculum(admin_id);
 CREATE INDEX IF NOT EXISTS idx_tpq_settings_admin_id ON tpq_settings(admin_id);
+CREATE INDEX IF NOT EXISTS idx_finances_admin_id ON finances(admin_id);
+CREATE INDEX IF NOT EXISTS idx_finances_date ON finances(date);
+CREATE INDEX IF NOT EXISTS idx_finances_type ON finances(type);
 
 -- Insert sample admin (remove in production)
 INSERT INTO admins (name, email, password, tpq_name, phone, address) 
