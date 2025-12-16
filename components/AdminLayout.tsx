@@ -54,17 +54,15 @@ export default function AdminLayout({ children, currentPage = '' }: AdminLayoutP
     {
       href: '/admin/teachers',
       icon: '👨‍🏫',
-      label: 'Pengajar',
-      children: [
-        { href: '/admin/teachers', icon: '👥', label: 'Data Pengajar' }
-      ]
+      label: 'Pengajar'
     },
     {
       href: '/admin/students',
       icon: '👨‍🎓',
       label: 'Santri',
       children: [
-        { href: '/admin/students', icon: '📋', label: 'Data Santri' }
+        { href: '/admin/students', icon: '📋', label: 'Data Santri' },
+        { href: '/admin/students/classes', icon: '🏫', label: 'Kelola Kelas' }
       ]
     },
     {

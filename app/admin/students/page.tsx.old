@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import Link from 'next/link';
 
 interface Student {
   id: number;
@@ -80,10 +79,7 @@ const AddStudentModal = ({
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          class_id: formData.class_id || null
-        }),
+        body: JSON.stringify(formData),
       });
 
       if (response.ok) {
@@ -122,80 +118,81 @@ const AddStudentModal = ({
           )}
           
           <div>
-            <label className="block text-sm font-medium text-black mb-2">Nama Santri *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nama Santri *</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Masukkan nama lengkap santri"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-black mb-2">Kelas</label>
-            <select
-              value={formData.class_id}
-              onChange={(e) => setFormData(prev => ({ ...prev, class_id: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            >
-              <option value="">Pilih Kelas (Opsional)</option>
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.name} - {cls.teacher_in_charge}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-black mb-2">Tempat Lahir *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tempat Lahir *</label>
               <input
                 type="text"
                 value={formData.birth_place}
                 onChange={(e) => setFormData(prev => ({ ...prev, birth_place: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Contoh: Jakarta"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-black mb-2">Tanggal Lahir *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal Lahir *</label>
               <input
                 type="date"
                 value={formData.birth_date}
                 onChange={(e) => setFormData(prev => ({ ...prev, birth_date: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-black mb-2">Nama Ayah *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nama Ayah *</label>
             <input
               type="text"
               value={formData.parent_name}
               onChange={(e) => setFormData(prev => ({ ...prev, parent_name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Nama ayah santri"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-black mb-2">No. Telp Orang Tua *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">No. Telp Orang Tua *</label>
             <input
               type="tel"
               value={formData.parent_phone}
               onChange={(e) => setFormData(prev => ({ ...prev, parent_phone: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="08123456789"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Kelas</label>
+            <select
+              value={formData.class_id}
+              onChange={(e) => setFormData(prev => ({ ...prev, class_id: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Pilih Kelas (Opsional)</option>
+              {classes.map((cls) => (
+                <option key={cls.id} value={cls.id}>
+                  {cls.name} - {cls.teacher_in_charge || 'Belum ada penanggung jawab'}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Santri dapat ditambahkan tanpa kelas terlebih dahulu</p>
           </div>
 
           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-6">
@@ -224,10 +221,10 @@ const AddStudentModal = ({
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClass, setSelectedClass] = useState<string>('all');
 
   useEffect(() => {
     fetchClasses();
@@ -260,9 +257,8 @@ export default function StudentsPage() {
     try {
       const token = localStorage.getItem('admin_token');
       const url = selectedClass === 'all' 
-        ? '/api/admin/students' 
+        ? '/api/admin/students'
         : `/api/admin/students?classId=${selectedClass}`;
-      
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -284,7 +280,6 @@ export default function StudentsPage() {
 
   const handleStudentAdded = () => {
     fetchStudents();
-    fetchClasses(); // Refresh class count
   };
 
   const handleDeleteStudent = async (studentId: number, studentName: string) => {
@@ -306,7 +301,6 @@ export default function StudentsPage() {
       if (response.ok) {
         setStudents(prev => prev.filter(student => student.id !== studentId));
         alert(`Santri ${studentName} berhasil dihapus`);
-        fetchClasses(); // Refresh class count
       } else {
         const error = await response.json();
         alert(error.error || 'Gagal menghapus santri');
@@ -314,34 +308,6 @@ export default function StudentsPage() {
     } catch (error) {
       console.error('Error deleting student:', error);
       alert('Terjadi kesalahan');
-    }
-  };
-
-  const handleExportExcel = async () => {
-    try {
-      const token = localStorage.getItem('admin_token');
-      const response = await fetch('/api/admin/export-excel', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Laporan_TPQ_${new Date().toISOString().split('T')[0]}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        alert('Gagal mengunduh laporan');
-      }
-    } catch (error) {
-      console.error('Error downloading report:', error);
-      alert('Terjadi kesalahan saat mengunduh laporan');
     }
   };
 
@@ -358,18 +324,12 @@ export default function StudentsPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Data Santri</h1>
             <p className="text-gray-600">Kelola data santri TPQ</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/admin/students/classes"
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
-            >
-              🏫 Kelola Kelas
-            </Link>
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
-              onClick={handleExportExcel}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              onClick={() => window.location.href = '/admin/students/classes'}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
             >
-              📥 Export Excel
+              📚 Kelola Kelas
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -380,82 +340,28 @@ export default function StudentsPage() {
           </div>
         </div>
 
-        {/* Classes Card Grid */}
-        {classes.length > 0 && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">📚 Daftar Kelas</h2>
-              <Link
-                href="/admin/students/classes"
-                className="text-blue-600 hover:underline text-sm"
-              >
-                Kelola Semua Kelas →
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {classes.map((classItem) => (
-                <Link 
-                  key={classItem.id} 
-                  href={`/admin/students/classes/${classItem.id}`}
-                  className="bg-gradient-to-br from-blue-50 to-white rounded-xl shadow-sm p-5 hover:shadow-lg transition-all border-2 border-blue-100 hover:border-blue-300 group"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="bg-blue-500 text-white w-12 h-12 rounded-lg flex items-center justify-center text-2xl shadow-md">
-                      🏫
-                    </div>
-                    <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">
-                      {classItem.student_count} santri
-                    </div>
-                  </div>
-                  <h3 className="font-bold text-lg text-gray-900 mb-1">{classItem.name}</h3>
-                  <p className="text-sm text-gray-600 mb-3 flex items-center gap-1">
-                    <span>👨‍🏫</span> {classItem.teacher_in_charge || 'Belum ada'}
-                  </p>
-                  <div className="text-sm text-blue-600 font-medium group-hover:underline flex items-center gap-1">
-                    Kelola Kelas <span className="group-hover:translate-x-1 transition-transform">→</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {classes.length === 0 && (
-          <div className="bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-8 text-center">
-            <div className="text-6xl mb-4">🏫</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Belum Ada Kelas</h3>
-            <p className="text-gray-600 mb-4">Buat kelas pertama untuk mulai mengelola santri Anda</p>
-            <Link
-              href="/admin/students/classes"
-              className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-            >
-              + Buat Kelas Pertama
-            </Link>
-          </div>
-        )}
-
         <div className="bg-white rounded-lg shadow-sm">
           <div className="p-6 border-b space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">Semua Kelas</option>
+                {classes.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.name} ({cls.student_count} santri)
+                  </option>
+                ))}
+              </select>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Cari nama santri atau ayah..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-              >
-                <option value="all">Semua Kelas</option>
-                {classes.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
 
@@ -468,13 +374,13 @@ export default function StudentsPage() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase">Nama</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase">Kelas</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase">TTL</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase">Nama Ayah</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase">No. Telp</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase">Aksi</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">TTL</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kelas</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Ayah</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No. Telp</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -485,12 +391,12 @@ export default function StudentsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">
-                          {student.class_name || '-'}
+                          {student.birth_place}, {new Date(student.birth_date).toLocaleDateString('id-ID')}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">
-                          {student.birth_place}, {new Date(student.birth_date).toLocaleDateString('id-ID')}
+                          {student.class_name || '-'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
