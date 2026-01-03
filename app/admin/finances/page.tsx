@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 interface Finance {
   id: number;
@@ -501,6 +504,210 @@ export default function AdminFinancesPage() {
     return type === 'income' ? '📈' : '📉';
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TPQ AN-NABA', 105, 15, { align: 'center' });
+    
+    doc.setFontSize(14);
+    doc.text('LAPORAN KEUANGAN', 105, 25, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const periodText = filterMonth 
+      ? `Periode: ${months.find(m => m.value === filterMonth)?.label} ${filterYear}`
+      : `Periode: Tahun ${filterYear}`;
+    doc.text(periodText, 105, 32, { align: 'center' });
+    
+    // Line separator
+    doc.setLineWidth(0.5);
+    doc.line(20, 36, 190, 36);
+    
+    // Summary Box
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RINGKASAN', 20, 44);
+    
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.rect(20, 46, 170, 25);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(`Total Pemasukan: Rp ${summary.income.toLocaleString('id-ID')}`, 25, 53);
+    doc.text(`Total Pengeluaran: Rp ${summary.expense.toLocaleString('id-ID')}`, 25, 60);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Saldo Akhir: Rp ${summary.balance.toLocaleString('id-ID')}`, 25, 67);
+    
+    // Table data
+    const tableData = finances.map((finance, index) => [
+      index + 1,
+      new Date(finance.date).toLocaleDateString('id-ID'),
+      finance.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+      finance.category,
+      finance.type === 'income' 
+        ? `Rp ${finance.amount.toLocaleString('id-ID')}`
+        : '',
+      finance.type === 'expense' 
+        ? `Rp ${finance.amount.toLocaleString('id-ID')}`
+        : '',
+      finance.description || '-'
+    ]);
+    
+    // Table
+    autoTable(doc, {
+      startY: 75,
+      head: [['No', 'Tanggal', 'Tipe', 'Kategori', 'Pemasukan', 'Pengeluaran', 'Keterangan']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 8
+      },
+      bodyStyles: {
+        fontSize: 7,
+        textColor: 50
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 30 },
+        4: { cellWidth: 30, halign: 'right' },
+        5: { cellWidth: 30, halign: 'right' },
+        6: { cellWidth: 40 }
+      },
+      margin: { left: 10, right: 10 }
+    });
+    
+    // Footer with signature
+    const finalY = (doc as any).lastAutoTable.finalY || 75;
+    
+    // Date
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID', { 
+      day: 'numeric',
+      month: 'long', 
+      year: 'numeric'
+    })}`, 20, finalY + 10);
+    
+    // Signature section
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const signatureY = finalY + 20;
+    
+    doc.text(`${new Date().toLocaleDateString('id-ID', { 
+      day: 'numeric',
+      month: 'long', 
+      year: 'numeric'
+    })}`, 140, signatureY);
+    
+    doc.text('YANG BERTANDA TANGAN,', 140, signatureY + 8);
+    doc.text('KEPALA TPQ', 140, signatureY + 14);
+    
+    // Signature line
+    doc.line(130, signatureY + 40, 180, signatureY + 40);
+    doc.text('(...............................................)', 140, signatureY + 45);
+    
+    // Save PDF
+    const fileName = filterMonth 
+      ? `Laporan_Keuangan_${months.find(m => m.value === filterMonth)?.label}_${filterYear}.pdf`
+      : `Laporan_Keuangan_${filterYear}.pdf`;
+    doc.save(fileName);
+  };
+
+  const exportToExcel = () => {
+    // Prepare data
+    const excelData = finances.map((finance, index) => ({
+      'No': index + 1,
+      'Tanggal': new Date(finance.date).toLocaleDateString('id-ID'),
+      'Tipe': finance.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+      'Kategori': finance.category,
+      'Pemasukan (Rp)': finance.type === 'income' ? finance.amount : '',
+      'Pengeluaran (Rp)': finance.type === 'expense' ? finance.amount : '',
+      'Keterangan': finance.description || '-',
+      'Metode Pembayaran': finance.payment_method || '-'
+    }));
+    
+    // Add summary at the end
+    excelData.push({});
+    excelData.push({
+      'No': '',
+      'Tanggal': 'RINGKASAN',
+      'Tipe': '',
+      'Kategori': '',
+      'Pemasukan (Rp)': '',
+      'Pengeluaran (Rp)': '',
+      'Keterangan': '',
+      'Metode Pembayaran': ''
+    });
+    excelData.push({
+      'No': '',
+      'Tanggal': 'Total Pemasukan',
+      'Tipe': '',
+      'Kategori': '',
+      'Pemasukan (Rp)': summary.income,
+      'Pengeluaran (Rp)': '',
+      'Keterangan': '',
+      'Metode Pembayaran': ''
+    });
+    excelData.push({
+      'No': '',
+      'Tanggal': 'Total Pengeluaran',
+      'Tipe': '',
+      'Kategori': '',
+      'Pemasukan (Rp)': '',
+      'Pengeluaran (Rp)': summary.expense,
+      'Keterangan': '',
+      'Metode Pembayaran': ''
+    });
+    excelData.push({
+      'No': '',
+      'Tanggal': 'Saldo Akhir',
+      'Tipe': '',
+      'Kategori': '',
+      'Pemasukan (Rp)': summary.balance,
+      'Pengeluaran (Rp)': '',
+      'Keterangan': '',
+      'Metode Pembayaran': ''
+    });
+    
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 5 },  // No
+      { wch: 15 }, // Tanggal
+      { wch: 15 }, // Tipe
+      { wch: 25 }, // Kategori
+      { wch: 15 }, // Pemasukan
+      { wch: 15 }, // Pengeluaran
+      { wch: 30 }, // Keterangan
+      { wch: 15 }  // Metode Pembayaran
+    ];
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Laporan Keuangan');
+    
+    // Save file
+    const fileName = filterMonth 
+      ? `Laporan_Keuangan_${months.find(m => m.value === filterMonth)?.label}_${filterYear}.xlsx`
+      : `Laporan_Keuangan_${filterYear}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   const months = [
     { value: '1', label: 'Januari' },
     { value: '2', label: 'Februari' },
@@ -534,15 +741,29 @@ export default function AdminFinancesPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Manajemen Keuangan</h1>
             <p className="text-gray-600">Kelola pemasukan dan pengeluaran TPQ</p>
           </div>
-          <div className="flex space-x-2 w-full sm:w-auto">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <button 
+              onClick={exportToPDF}
+              disabled={finances.length === 0}
+              className="flex-1 sm:flex-initial px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+            >
+              📄 Export PDF
+            </button>
+            <button 
+              onClick={exportToExcel}
+              disabled={finances.length === 0}
+              className="flex-1 sm:flex-initial px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+            >
+              📊 Export Excel
+            </button>
             <button 
               onClick={() => {
                 setEditData(null);
                 setIsAddModalOpen(true);
               }}
-              className="flex-1 sm:flex-initial px-4 sm:px-6 py-3 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors btn-touch"
+              className="flex-1 sm:flex-initial px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
-              ➕ Tambah Transaksi
+              ➕ Tambah
             </button>
           </div>
         </div>

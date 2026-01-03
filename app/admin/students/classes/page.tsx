@@ -13,6 +13,12 @@ interface Class {
   created_at: string;
 }
 
+interface Teacher {
+  id: number;
+  name: string;
+  specialization: string;
+}
+
 interface ClassFormData {
   name: string;
   teacher_in_charge: string;
@@ -35,8 +41,15 @@ const ClassModal = ({
     teacher_in_charge: '',
     description: ''
   });
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchTeachers();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (editClass) {
@@ -49,6 +62,24 @@ const ClassModal = ({
       resetForm();
     }
   }, [editClass, isOpen]);
+
+  const fetchTeachers = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch('/api/admin/teachers', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTeachers(data.teachers || []);
+      }
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -134,15 +165,24 @@ const ClassModal = ({
 
           <div>
             <label className="block text-sm font-medium text-black mb-2">
-              Penanggung Jawab / Ustadz
+              Penanggung Jawab / Ustadz *
             </label>
-            <input
-              type="text"
+            <select
               value={formData.teacher_in_charge}
               onChange={(e) => setFormData(prev => ({ ...prev, teacher_in_charge: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-              placeholder="Nama ustadz/ustadzah yang mengajar"
-            />
+              required
+            >
+              <option value="">Pilih Pengajar</option>
+              {teachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.name}>
+                  {teacher.name} - {teacher.specialization}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Pilih pengajar yang akan bertanggung jawab untuk kelas ini
+            </p>
           </div>
 
           <div>

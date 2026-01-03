@@ -80,7 +80,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     const { id } = params;
 
-    // Delete teacher data untuk admin yang login
+    // First, delete all attendance records for this teacher
+    await pool.query(`
+      DELETE FROM teacher_attendance 
+      WHERE teacher_id = $1 AND admin_id = $2
+    `, [id, adminId]);
+
+    // Then delete teacher data untuk admin yang login
     const result = await pool.query(`
       DELETE FROM teachers 
       WHERE id = $1 AND admin_id = $2
@@ -93,7 +99,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     return NextResponse.json({ 
       success: true, 
-      message: `Pengajar ${result.rows[0].name} berhasil dihapus`
+      message: `Pengajar ${result.rows[0].name} dan data absensinya berhasil dihapus`
     });
 
   } catch (error) {

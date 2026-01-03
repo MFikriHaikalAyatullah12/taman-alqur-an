@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
 
-// GET - Fetch teacher attendance records
+// GET - Fetch teacher materials
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -23,61 +23,54 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const teacherId = searchParams.get('teacherId');
-    const date = searchParams.get('date');
+    const teacherId = searchParams.get('teacher_id');
     const month = searchParams.get('month'); // Format: YYYY-MM
 
     let query = `
       SELECT 
-        ta.id,
-        ta.teacher_id,
-        ta.attendance_date,
-        ta.status,
-        ta.clock_in,
-        ta.clock_out,
-        ta.notes,
+        tm.id,
+        tm.teacher_id,
+        tm.material_date,
+        tm.material_topic,
+        tm.material_description,
+        tm.class_name,
+        tm.duration_minutes,
         t.name as teacher_name
-      FROM teacher_attendance ta
-      INNER JOIN teachers t ON ta.teacher_id = t.id AND t.admin_id = $1
-      WHERE ta.admin_id = $1
+      FROM teacher_materials tm
+      INNER JOIN teachers t ON tm.teacher_id = t.id
+      WHERE tm.admin_id = $1
     `;
     
     const params: any[] = [adminId];
     let paramIndex = 2;
 
     if (teacherId) {
-      query += ` AND ta.teacher_id = $${paramIndex}`;
+      query += ` AND tm.teacher_id = $${paramIndex}`;
       params.push(teacherId);
       paramIndex++;
     }
 
-    if (date) {
-      query += ` AND ta.attendance_date = $${paramIndex}`;
-      params.push(date);
-      paramIndex++;
-    }
-
     if (month) {
-      query += ` AND TO_CHAR(ta.attendance_date, 'YYYY-MM') = $${paramIndex}`;
+      query += ` AND TO_CHAR(tm.material_date, 'YYYY-MM') = $${paramIndex}`;
       params.push(month);
       paramIndex++;
     }
 
-    query += ` ORDER BY ta.attendance_date DESC, t.name ASC`;
+    query += ` ORDER BY tm.material_date DESC`;
 
     const result = await pool.query(query, params);
 
-    return NextResponse.json({ success: true, attendance: result.rows });
+    return NextResponse.json({ success: true, materials: result.rows });
 
   } catch (error) {
-    console.error('Teacher attendance fetch error:', error);
+    console.error('Teacher materials fetch error:', error);
     return NextResponse.json({ 
-      error: 'Gagal mengambil data absensi pengajar' 
+      error: 'Gagal mengambil data materi pengajar' 
     }, { status: 500 });
   }
 }
 
-// POST - Create or update teacher attendance
+// POST - Create teacher material
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -95,51 +88,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { teacher_id, attendance_date, status, clock_in, clock_out, notes } = body;
+    const { 
+      teacher_id, 
+      material_date, 
+      material_topic, 
+      material_description,
+      class_name,
+      duration_minutes 
+    } = await request.json();
 
-    console.log('📥 Received attendance data:', { teacher_id, attendance_date, status, clock_in, clock_out, notes });
-
-    if (!teacher_id || !attendance_date || !status) {
-      console.error('❌ Validation failed:', { teacher_id, attendance_date, status });
+    if (!teacher_id || !material_date || !material_topic) {
       return NextResponse.json({ 
-        error: 'Teacher ID, tanggal, dan status wajib diisi',
-        received: { teacher_id, attendance_date, status }
+        error: 'teacher_id, material_date, dan material_topic wajib diisi' 
       }, { status: 400 });
     }
 
-    // Upsert attendance (insert or update if exists)
     const result = await pool.query(`
-      INSERT INTO teacher_attendance (
-        admin_id, teacher_id, attendance_date, status, clock_in, clock_out, notes
-      )
+      INSERT INTO teacher_materials 
+      (admin_id, teacher_id, material_date, material_topic, material_description, class_name, duration_minutes)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (teacher_id, attendance_date) 
-      DO UPDATE SET 
-        status = EXCLUDED.status,
-        clock_in = EXCLUDED.clock_in,
-        clock_out = EXCLUDED.clock_out,
-        notes = EXCLUDED.notes,
-        updated_at = CURRENT_TIMESTAMP
-      RETURNING 
-        id, teacher_id, attendance_date, status, clock_in, clock_out, notes, created_at
-    `, [adminId, teacher_id, attendance_date, status, clock_in || null, clock_out || null, notes || null]);
+      RETURNING *
+    `, [
+      adminId, 
+      teacher_id, 
+      material_date, 
+      material_topic, 
+      material_description || null,
+      class_name || null,
+      duration_minutes || 60
+    ]);
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Absensi pengajar berhasil disimpan',
-      attendance: result.rows[0]
-    }, { status: 201 });
+      message: 'Materi berhasil ditambahkan',
+      data: result.rows[0]
+    });
 
   } catch (error) {
-    console.error('Teacher attendance creation error:', error);
+    console.error('Teacher material creation error:', error);
     return NextResponse.json({ 
-      error: 'Gagal menyimpan absensi pengajar' 
+      error: 'Gagal menambahkan materi' 
     }, { status: 500 });
   }
 }
 
-// DELETE - Delete teacher attendance record
+// DELETE - Remove teacher material
 export async function DELETE(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -157,31 +150,31 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const { attendanceId } = await request.json();
+    const { material_id } = await request.json();
 
-    if (!attendanceId) {
-      return NextResponse.json({ error: 'ID absensi tidak valid' }, { status: 400 });
+    if (!material_id) {
+      return NextResponse.json({ error: 'material_id diperlukan' }, { status: 400 });
     }
 
     const result = await pool.query(`
-      DELETE FROM teacher_attendance 
+      DELETE FROM teacher_materials 
       WHERE id = $1 AND admin_id = $2
       RETURNING id
-    `, [attendanceId, adminId]);
+    `, [material_id, adminId]);
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: 'Data absensi tidak ditemukan' }, { status: 404 });
+      return NextResponse.json({ error: 'Materi tidak ditemukan' }, { status: 404 });
     }
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Data absensi pengajar berhasil dihapus'
+      message: 'Materi berhasil dihapus'
     });
 
   } catch (error) {
-    console.error('Teacher attendance deletion error:', error);
+    console.error('Teacher material deletion error:', error);
     return NextResponse.json({ 
-      error: 'Gagal menghapus data absensi pengajar' 
+      error: 'Gagal menghapus materi' 
     }, { status: 500 });
   }
 }

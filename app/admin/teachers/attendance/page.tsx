@@ -144,13 +144,7 @@ export default function TeacherAttendancePage() {
   const saveAttendance = async (teacherId: number) => {
     try {
       const token = localStorage.getItem('admin_token');
-      const attendance = attendanceData[teacherId] || {
-        teacher_id: teacherId,
-        status: 'hadir',
-        clock_in: '',
-        clock_out: '',
-        notes: ''
-      };
+      const attendance = attendanceData[teacherId] || {};
 
       const response = await fetch('/api/admin/teacher-attendance', {
         method: 'POST',
@@ -161,10 +155,10 @@ export default function TeacherAttendancePage() {
         body: JSON.stringify({
           teacher_id: teacherId,
           attendance_date: selectedDate,
-          status: attendance.status,
+          status: attendance.status || 'hadir',
           clock_in: attendance.clock_in || null,
           clock_out: attendance.clock_out || null,
-          notes: attendance.notes
+          notes: attendance.notes || null
         }),
       });
 

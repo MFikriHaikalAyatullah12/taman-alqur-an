@@ -394,7 +394,7 @@ export default function TeachersPage() {
 
       if (response.ok) {
         const result = await response.json();
-        setTeachers(result.data || []);
+        setTeachers(result.teachers || result.data || []);
       } else {
         console.error('Failed to fetch teachers');
         // Fallback to mock data if API fails
@@ -491,13 +491,36 @@ export default function TeachersPage() {
             <h1 className="text-3xl font-bold text-gray-900">Manajemen Pengajar</h1>
             <p className="text-gray-600">Kelola data pengajar TPQ AN-NABA</p>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-          >
-            <span>➕</span>
-            <span>Tambah Pengajar</span>
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => window.location.href = '/admin/teachers/materials'}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+            >
+              <span>📚</span>
+              <span>Materi</span>
+            </button>
+            <button
+              onClick={() => window.location.href = '/admin/teachers/attendance'}
+              className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+            >
+              <span>📋</span>
+              <span>Absen</span>
+            </button>
+            <button
+              onClick={() => window.location.href = '/admin/teachers/performance'}
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+            >
+              <span>📊</span>
+              <span>Performa</span>
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+            >
+              <span>➕</span>
+              <span>Tambah Pengajar</span>
+            </button>
+          </div>
         </div>
 
         {/* Search */}
@@ -584,20 +607,27 @@ export default function TeachersPage() {
 
               {/* Card Actions */}
               <div className="px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-100">
-                <div className="flex space-x-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => window.location.href = `/admin/teachers/performance?id=${teacher.id}`}
+                    className="px-2 py-2 bg-green-500 text-white text-xs font-medium rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
+                    title="Lihat Performa"
+                  >
+                    <span>📊</span>
+                  </button>
                   <button
                     onClick={() => openEditModal(teacher)}
-                    className="flex-1 px-3 py-2 bg-blue-500 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center space-x-1"
+                    className="px-2 py-2 bg-blue-500 text-white text-xs font-medium rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
+                    title="Edit"
                   >
                     <span>✏️</span>
-                    <span>Edit</span>
                   </button>
                   <button
                     onClick={() => handleDeleteTeacher(teacher.id)}
-                    className="flex-1 px-3 py-2 bg-red-500 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center space-x-1"
+                    className="px-2 py-2 bg-red-500 text-white text-xs font-medium rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center"
+                    title="Hapus"
                   >
                     <span>🗑️</span>
-                    <span>Hapus</span>
                   </button>
                 </div>
               </div>

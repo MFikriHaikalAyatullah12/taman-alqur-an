@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       ORDER BY name ASC
     `, [adminId]);
 
-    return NextResponse.json({ success: true, data: result.rows });
+    return NextResponse.json({ success: true, teachers: result.rows });
 
   } catch (error) {
     console.error('Teachers fetch error:', error);
