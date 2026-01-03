@@ -281,11 +281,10 @@ export default function TeacherDashboardPage() {
             ) : (
               <>
                 {/* Attendance Chart */}
-                <div className="bg-white rounded-3xl shadow-xl p-8 mb-8 relative overflow-hidden">
-                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-teal-400 to-cyan-500 opacity-10 rounded-tr-full"></div>
+                <div className="bg-white rounded-xl shadow-md p-4 mb-4 relative overflow-hidden max-w-4xl mx-auto">
                   
-                  <h3 className="text-2xl font-black text-gray-900 mb-8 flex items-center">
-                    <svg className="w-7 h-7 mr-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Kehadiran Bulanan
@@ -293,9 +292,9 @@ export default function TeacherDashboardPage() {
                   
                   {performanceData && performanceData.total_days > 0 ? (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div className="flex items-center justify-center">
-                          <ResponsiveContainer width="100%" height={300}>
+                          <ResponsiveContainer width="100%" height={160}>
                             <PieChart>
                               <Pie
                                 data={getAttendanceChartData()}
@@ -303,7 +302,7 @@ export default function TeacherDashboardPage() {
                                 cy="50%"
                                 labelLine={false}
                                 label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                                outerRadius={100}
+                                outerRadius={60}
                                 dataKey="value"
                               >
                                 {getAttendanceChartData().map((entry, index) => (
@@ -315,40 +314,40 @@ export default function TeacherDashboardPage() {
                           </ResponsiveContainer>
                         </div>
                         
-                        <div className="space-y-4">
-                          <div className="bg-gradient-to-r from-green-50 to-emerald-100 border-l-4 border-green-500 rounded-xl p-5 shadow-sm">
-                            <div className="text-green-700 text-sm font-bold mb-1">Hadir</div>
-                            <div className="text-4xl font-black text-green-900">{performanceData.hadir} hari</div>
+                        <div className="space-y-2">
+                          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-3 border-green-500 rounded-lg p-2 shadow-sm">
+                            <div className="text-green-700 text-xs font-semibold">Hadir</div>
+                            <div className="text-lg font-bold text-green-900">{performanceData.hadir} hari</div>
                           </div>
-                          <div className="bg-gradient-to-r from-red-50 to-pink-100 border-l-4 border-red-500 rounded-xl p-5 shadow-sm">
-                            <div className="text-red-700 text-sm font-bold mb-1">Alfa</div>
-                            <div className="text-4xl font-black text-red-900">{performanceData.alfa} hari</div>
+                          <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-3 border-red-500 rounded-lg p-2 shadow-sm">
+                            <div className="text-red-700 text-xs font-semibold">Alfa</div>
+                            <div className="text-lg font-bold text-red-900">{performanceData.alfa} hari</div>
                           </div>
-                          <div className="bg-gradient-to-r from-yellow-50 to-orange-100 border-l-4 border-yellow-500 rounded-xl p-5 shadow-sm">
-                            <div className="text-yellow-700 text-sm font-bold mb-1">Sakit</div>
-                            <div className="text-4xl font-black text-yellow-900">{performanceData.sakit} hari</div>
+                          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-3 border-yellow-500 rounded-lg p-2 shadow-sm">
+                            <div className="text-yellow-700 text-xs font-semibold">Sakit</div>
+                            <div className="text-lg font-bold text-yellow-900">{performanceData.sakit} hari</div>
                           </div>
-                          <div className="bg-gradient-to-r from-blue-50 to-cyan-100 border-l-4 border-blue-500 rounded-xl p-5 shadow-sm">
-                            <div className="text-blue-700 text-sm font-bold mb-1">Izin</div>
-                            <div className="text-4xl font-black text-blue-900">{performanceData.izin} hari</div>
+                          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-l-3 border-blue-500 rounded-lg p-2 shadow-sm">
+                            <div className="text-blue-700 text-xs font-semibold">Izin</div>
+                            <div className="text-lg font-bold text-blue-900">{performanceData.izin} hari</div>
                           </div>
                         </div>
                       </div>
                       
-                      <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-white text-center shadow-lg">
-                        <div className="text-emerald-100 text-sm font-bold mb-3">PERSENTASE KEHADIRAN</div>
-                        <div className="text-6xl font-black mb-3">{getAttendancePercentage()}%</div>
-                        <div className="text-emerald-100 font-semibold">dari {performanceData.total_days} hari</div>
+                      <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-3 text-white text-center shadow-md">
+                        <div className="text-emerald-100 text-xs font-semibold mb-1">PERSENTASE KEHADIRAN</div>
+                        <div className="text-2xl font-black mb-1">{getAttendancePercentage()}%</div>
+                        <div className="text-emerald-100 text-xs font-medium">dari {performanceData.total_days} hari</div>
                       </div>
 
                       {performanceData.materiCount > 0 && (
-                        <div className="mt-8 bg-gradient-to-r from-purple-50 to-pink-100 border-l-4 border-purple-500 rounded-xl p-6 shadow-sm">
+                        <div className="mt-4 bg-gradient-to-r from-purple-50 to-pink-50 border-l-3 border-purple-500 rounded-lg p-3 shadow-sm">
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="text-purple-700 text-sm font-bold mb-1">Total Materi Diajarkan</div>
-                              <div className="text-4xl font-black text-purple-900">{performanceData.materiCount} materi</div>
+                              <div className="text-purple-700 text-xs font-semibold mb-0.5">Total Materi Diajarkan</div>
+                              <div className="text-lg font-bold text-purple-900">{performanceData.materiCount} materi</div>
                             </div>
-                            <svg className="w-16 h-16 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                             </svg>
                           </div>

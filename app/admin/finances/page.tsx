@@ -41,6 +41,7 @@ function AddFinanceModal({ isOpen, onClose, onSave, editData }: AddModalProps) {
     payment_method: 'cash',
     reference_number: ''
   });
+  const [displayAmount, setDisplayAmount] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string>('');
   const [mounted, setMounted] = useState(false);
@@ -55,6 +56,31 @@ function AddFinanceModal({ isOpen, onClose, onSave, editData }: AddModalProps) {
       }));
     }
   }, []);
+
+  // Format number dengan pemisah ribuan
+  const formatNumber = (value: string) => {
+    // Hapus semua karakter non-digit
+    const numericValue = value.replace(/\D/g, '');
+    
+    // Format dengan pemisah ribuan
+    if (numericValue === '') return '';
+    
+    return parseInt(numericValue).toLocaleString('id-ID');
+  };
+
+  // Handle perubahan input nominal
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    
+    // Hapus semua karakter non-digit
+    const numericValue = inputValue.replace(/\D/g, '');
+    
+    // Set nilai asli (tanpa format) untuk formData
+    setFormData(prev => ({ ...prev, amount: numericValue }));
+    
+    // Set nilai dengan format untuk display
+    setDisplayAmount(formatNumber(numericValue));
+  };
 
   const incomeCategories = [
     'SPP/Biaya Pendidikan',
@@ -94,6 +120,7 @@ function AddFinanceModal({ isOpen, onClose, onSave, editData }: AddModalProps) {
         payment_method: editData.payment_method || 'cash',
         reference_number: editData.reference_number || ''
       });
+      setDisplayAmount(formatNumber(editData.amount.toString()));
     } else if (mounted) {
       setFormData({
         type: 'income',
@@ -104,6 +131,7 @@ function AddFinanceModal({ isOpen, onClose, onSave, editData }: AddModalProps) {
         payment_method: 'cash',
         reference_number: ''
       });
+      setDisplayAmount('');
     }
     setError('');
   }, [editData, isOpen, mounted]);
@@ -162,6 +190,7 @@ function AddFinanceModal({ isOpen, onClose, onSave, editData }: AddModalProps) {
           payment_method: 'cash',
           reference_number: ''
         });
+        setDisplayAmount('');
         
         // Tutup modal
         onClose();
@@ -237,16 +266,24 @@ function AddFinanceModal({ isOpen, onClose, onSave, editData }: AddModalProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Jumlah (Rp) *</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                placeholder="0"
-                required
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 font-semibold">Rp</span>
+                </div>
+                <input
+                  type="text"
+                  value={displayAmount}
+                  onChange={handleAmountChange}
+                  className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  placeholder="0"
+                  required
+                />
+              </div>
+              {displayAmount && (
+                <p className="mt-1 text-xs text-gray-500">
+                  {formData.amount ? `Rp ${parseInt(formData.amount).toLocaleString('id-ID')}` : ''}
+                </p>
+              )}
             </div>
 
             <div>
@@ -507,117 +544,187 @@ export default function AdminFinancesPage() {
   const exportToPDF = () => {
     const doc = new jsPDF();
     
-    // Header
-    doc.setFontSize(18);
+    // Header dengan border dan background
+    doc.setFillColor(46, 125, 50); // Hijau gelap
+    doc.rect(0, 0, 210, 45, 'F');
+    
+    // Title
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('TPQ AN-NABA', 105, 15, { align: 'center' });
+    doc.text('TPQ AN-NABA', 105, 20, { align: 'center' });
     
-    doc.setFontSize(14);
-    doc.text('LAPORAN KEUANGAN', 105, 25, { align: 'center' });
+    doc.setFontSize(16);
+    doc.text('LAPORAN KEUANGAN', 105, 28, { align: 'center' });
     
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     const periodText = filterMonth 
       ? `Periode: ${months.find(m => m.value === filterMonth)?.label} ${filterYear}`
       : `Periode: Tahun ${filterYear}`;
-    doc.text(periodText, 105, 32, { align: 'center' });
+    doc.text(periodText, 105, 37, { align: 'center' });
     
-    // Line separator
+    // Summary Box dengan border dan shadow
+    const summaryY = 55;
+    
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(15, summaryY, 180, 45, 3, 3, 'F');
+    
+    doc.setDrawColor(46, 125, 50);
     doc.setLineWidth(0.5);
-    doc.line(20, 36, 190, 36);
+    doc.roundedRect(15, summaryY, 180, 45, 3, 3, 'S');
     
-    // Summary Box
+    // Summary Title
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(46, 125, 50);
+    doc.text('RINGKASAN KEUANGAN', 20, summaryY + 8);
+    
+    // Summary Content dengan grid
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('RINGKASAN', 20, 44);
-    
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.rect(20, 46, 170, 25);
-    
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text(`Total Pemasukan: Rp ${summary.income.toLocaleString('id-ID')}`, 25, 53);
-    doc.text(`Total Pengeluaran: Rp ${summary.expense.toLocaleString('id-ID')}`, 25, 60);
+    doc.setTextColor(60, 60, 60);
     
+    // Pemasukan
     doc.setFont('helvetica', 'bold');
-    doc.text(`Saldo Akhir: Rp ${summary.balance.toLocaleString('id-ID')}`, 25, 67);
+    doc.text('Total Pemasukan:', 20, summaryY + 18);
+    doc.setTextColor(46, 125, 50);
+    doc.text(`Rp ${summary.income.toLocaleString('id-ID')}`, 70, summaryY + 18);
+    
+    // Pengeluaran
+    doc.setTextColor(60, 60, 60);
+    doc.text('Total Pengeluaran:', 20, summaryY + 26);
+    doc.setTextColor(220, 38, 38);
+    doc.text(`Rp ${summary.expense.toLocaleString('id-ID')}`, 70, summaryY + 26);
+    
+    // Saldo - dengan background berbeda
+    doc.setFillColor(summary.balance >= 0 ? 46 : 220, summary.balance >= 0 ? 125 : 38, summary.balance >= 0 ? 50 : 38);
+    doc.roundedRect(15, summaryY + 32, 180, 10, 2, 2, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Saldo Akhir:', 20, summaryY + 39);
+    doc.text(`Rp ${summary.balance.toLocaleString('id-ID')}`, 70, summaryY + 39);
+    
+    // Table title
+    doc.setFontSize(12);
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DETAIL TRANSAKSI', 20, summaryY + 55);
     
     // Table data
     const tableData = finances.map((finance, index) => [
       index + 1,
-      new Date(finance.date).toLocaleDateString('id-ID'),
+      new Date(finance.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
       finance.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
       finance.category,
       finance.type === 'income' 
         ? `Rp ${finance.amount.toLocaleString('id-ID')}`
-        : '',
+        : '-',
       finance.type === 'expense' 
         ? `Rp ${finance.amount.toLocaleString('id-ID')}`
-        : '',
+        : '-',
       finance.description || '-'
     ]);
     
-    // Table
+    // Table dengan styling lebih baik
     autoTable(doc, {
-      startY: 75,
+      startY: summaryY + 60,
       head: [['No', 'Tanggal', 'Tipe', 'Kategori', 'Pemasukan', 'Pengeluaran', 'Keterangan']],
       body: tableData,
-      theme: 'striped',
+      theme: 'grid',
       headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
+        fillColor: [46, 125, 50],
+        textColor: [255, 255, 255],
         fontStyle: 'bold',
-        fontSize: 8
+        fontSize: 9,
+        halign: 'center',
+        valign: 'middle',
+        lineWidth: 0.1,
+        lineColor: [255, 255, 255]
       },
       bodyStyles: {
-        fontSize: 7,
-        textColor: 50
+        fontSize: 8,
+        textColor: [60, 60, 60],
+        lineWidth: 0.1,
+        lineColor: [200, 200, 200]
       },
       alternateRowStyles: {
-        fillColor: [245, 245, 245]
+        fillColor: [248, 250, 252]
       },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 25 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 30 },
-        4: { cellWidth: 30, halign: 'right' },
-        5: { cellWidth: 30, halign: 'right' },
-        6: { cellWidth: 40 }
+        0: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
+        1: { cellWidth: 28, halign: 'center' },
+        2: { cellWidth: 25, halign: 'center' },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 30, halign: 'right', fontStyle: 'bold', textColor: [46, 125, 50] },
+        5: { cellWidth: 30, halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38] },
+        6: { cellWidth: 30 }
       },
-      margin: { left: 10, right: 10 }
+      margin: { left: 15, right: 15 },
+      didParseCell: function(data) {
+        // Highlight income/expense cells
+        if (data.column.index === 4 && data.cell.text[0] !== '-') {
+          data.cell.styles.fillColor = [240, 253, 244];
+        }
+        if (data.column.index === 5 && data.cell.text[0] !== '-') {
+          data.cell.styles.fillColor = [254, 242, 242];
+        }
+      }
     });
     
-    // Footer with signature
-    const finalY = (doc as any).lastAutoTable.finalY || 75;
+    // Footer dengan signature
+    const finalY = (doc as any).lastAutoTable.finalY || summaryY + 60;
     
-    // Date
+    // Footer box
+    doc.setFillColor(245, 245, 245);
+    doc.rect(0, finalY + 10, 210, 70, 'F');
+    
+    // Date printed
     doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
+    doc.setTextColor(100, 100, 100);
     doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID', { 
       day: 'numeric',
       month: 'long', 
-      year: 'numeric'
-    })}`, 20, finalY + 10);
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 15, finalY + 20);
     
-    // Signature section
+    // Signature section with box
+    const signatureY = finalY + 30;
+    const signatureX = 140;
+    
+    doc.setDrawColor(46, 125, 50);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(signatureX - 10, signatureY - 5, 60, 45, 2, 2, 'S');
+    
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    const signatureY = finalY + 20;
-    
+    doc.setTextColor(60, 60, 60);
     doc.text(`${new Date().toLocaleDateString('id-ID', { 
       day: 'numeric',
       month: 'long', 
       year: 'numeric'
-    })}`, 140, signatureY);
+    })}`, signatureX + 20, signatureY, { align: 'center' });
     
-    doc.text('YANG BERTANDA TANGAN,', 140, signatureY + 8);
-    doc.text('KEPALA TPQ', 140, signatureY + 14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('YANG BERTANDA TANGAN,', signatureX + 20, signatureY + 7, { align: 'center' });
+    doc.text('KEPALA TPQ', signatureX + 20, signatureY + 13, { align: 'center' });
     
     // Signature line
-    doc.line(130, signatureY + 40, 180, signatureY + 40);
-    doc.text('(...............................................)', 140, signatureY + 45);
+    doc.setDrawColor(100, 100, 100);
+    doc.line(signatureX, signatureY + 30, signatureX + 40, signatureY + 30);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('( ..................................................... )', signatureX + 20, signatureY + 35, { align: 'center' });
+    
+    // Page border
+    doc.setDrawColor(46, 125, 50);
+    doc.setLineWidth(1);
+    doc.rect(5, 5, 200, 287, 'S');
     
     // Save PDF
     const fileName = filterMonth 
