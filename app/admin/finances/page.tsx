@@ -544,74 +544,71 @@ export default function AdminFinancesPage() {
   const exportToPDF = () => {
     const doc = new jsPDF();
     
-    // Header dengan border dan background
-    doc.setFillColor(46, 125, 50); // Hijau gelap
-    doc.rect(0, 0, 210, 45, 'F');
+    // Header tanpa background warna
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.5);
+    doc.line(10, 45, 200, 45);
     
     // Title
-    doc.setFontSize(22);
-    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
     doc.text('TPQ AN-NABA', 105, 20, { align: 'center' });
     
-    doc.setFontSize(16);
-    doc.text('LAPORAN KEUANGAN', 105, 28, { align: 'center' });
+    doc.setFontSize(18);
+    doc.text('LAPORAN KEUANGAN', 105, 30, { align: 'center' });
     
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     const periodText = filterMonth 
       ? `Periode: ${months.find(m => m.value === filterMonth)?.label} ${filterYear}`
       : `Periode: Tahun ${filterYear}`;
-    doc.text(periodText, 105, 37, { align: 'center' });
+    doc.text(periodText, 105, 40, { align: 'center' });
     
-    // Summary Box dengan border dan shadow
+    // Summary Box dengan border rapi
     const summaryY = 55;
     
-    doc.setFillColor(245, 245, 245);
-    doc.roundedRect(15, summaryY, 180, 45, 3, 3, 'F');
-    
-    doc.setDrawColor(46, 125, 50);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(15, summaryY, 180, 45, 3, 3, 'S');
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.7);
+    doc.rect(10, summaryY, 190, 50);
     
     // Summary Title
-    doc.setFontSize(12);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(46, 125, 50);
-    doc.text('RINGKASAN KEUANGAN', 20, summaryY + 8);
+    doc.setTextColor(0, 0, 0);
+    doc.text('RINGKASAN KEUANGAN', 105, summaryY + 10, { align: 'center' });
     
-    // Summary Content dengan grid
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(60, 60, 60);
+    // Line separator
+    doc.setLineWidth(0.3);
+    doc.line(10, summaryY + 14, 200, summaryY + 14);
+    
+    // Summary Content dengan spacing rapi
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
     
     // Pemasukan
-    doc.setFont('helvetica', 'bold');
-    doc.text('Total Pemasukan:', 20, summaryY + 18);
-    doc.setTextColor(46, 125, 50);
-    doc.text(`Rp ${summary.income.toLocaleString('id-ID')}`, 70, summaryY + 18);
+    doc.text('Total Pemasukan:', 15, summaryY + 23);
+    doc.text(`Rp ${summary.income.toLocaleString('id-ID')}`, 195, summaryY + 23, { align: 'right' });
     
     // Pengeluaran
-    doc.setTextColor(60, 60, 60);
-    doc.text('Total Pengeluaran:', 20, summaryY + 26);
-    doc.setTextColor(220, 38, 38);
-    doc.text(`Rp ${summary.expense.toLocaleString('id-ID')}`, 70, summaryY + 26);
+    doc.text('Total Pengeluaran:', 15, summaryY + 32);
+    doc.text(`Rp ${summary.expense.toLocaleString('id-ID')}`, 195, summaryY + 32, { align: 'right' });
     
-    // Saldo - dengan background berbeda
-    doc.setFillColor(summary.balance >= 0 ? 46 : 220, summary.balance >= 0 ? 125 : 38, summary.balance >= 0 ? 50 : 38);
-    doc.roundedRect(15, summaryY + 32, 180, 10, 2, 2, 'F');
+    // Line separator
+    doc.setLineWidth(0.5);
+    doc.line(10, summaryY + 36, 200, summaryY + 36);
     
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('Saldo Akhir:', 20, summaryY + 39);
-    doc.text(`Rp ${summary.balance.toLocaleString('id-ID')}`, 70, summaryY + 39);
+    // Saldo
+    doc.setFontSize(12);
+    doc.text('Saldo Akhir:', 15, summaryY + 45);
+    doc.text(`Rp ${summary.balance.toLocaleString('id-ID')}`, 195, summaryY + 45, { align: 'right' });
     
     // Table title
-    doc.setFontSize(12);
-    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(13);
+    doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
-    doc.text('DETAIL TRANSAKSI', 20, summaryY + 55);
+    doc.text('DETAIL TRANSAKSI', 10, summaryY + 60);
     
     // Table data
     const tableData = finances.map((finance, index) => [
@@ -630,101 +627,84 @@ export default function AdminFinancesPage() {
     
     // Table dengan styling lebih baik
     autoTable(doc, {
-      startY: summaryY + 60,
+      startY: summaryY + 65,
       head: [['No', 'Tanggal', 'Tipe', 'Kategori', 'Pemasukan', 'Pengeluaran', 'Keterangan']],
       body: tableData,
       theme: 'grid',
       headStyles: {
-        fillColor: [46, 125, 50],
-        textColor: [255, 255, 255],
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
         fontStyle: 'bold',
-        fontSize: 9,
+        fontSize: 10,
         halign: 'center',
         valign: 'middle',
-        lineWidth: 0.1,
-        lineColor: [255, 255, 255]
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0]
       },
       bodyStyles: {
-        fontSize: 8,
-        textColor: [60, 60, 60],
-        lineWidth: 0.1,
-        lineColor: [200, 200, 200]
+        fontSize: 9,
+        textColor: [0, 0, 0],
+        lineWidth: 0.3,
+        lineColor: [100, 100, 100]
       },
       alternateRowStyles: {
-        fillColor: [248, 250, 252]
+        fillColor: [250, 250, 250]
       },
       columnStyles: {
-        0: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
+        0: { cellWidth: 12, halign: 'center' },
         1: { cellWidth: 28, halign: 'center' },
         2: { cellWidth: 25, halign: 'center' },
         3: { cellWidth: 35 },
-        4: { cellWidth: 30, halign: 'right', fontStyle: 'bold', textColor: [46, 125, 50] },
-        5: { cellWidth: 30, halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38] },
+        4: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
+        5: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
         6: { cellWidth: 30 }
       },
-      margin: { left: 15, right: 15 },
-      didParseCell: function(data) {
-        // Highlight income/expense cells
-        if (data.column.index === 4 && data.cell.text[0] !== '-') {
-          data.cell.styles.fillColor = [240, 253, 244];
-        }
-        if (data.column.index === 5 && data.cell.text[0] !== '-') {
-          data.cell.styles.fillColor = [254, 242, 242];
-        }
-      }
+      margin: { left: 10, right: 10 }
     });
     
     // Footer dengan signature
     const finalY = (doc as any).lastAutoTable.finalY || summaryY + 60;
     
-    // Footer box
-    doc.setFillColor(245, 245, 245);
-    doc.rect(0, finalY + 10, 210, 70, 'F');
-    
     // Date printed
     doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
-    doc.setTextColor(100, 100, 100);
+    doc.setTextColor(80, 80, 80);
     doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID', { 
       day: 'numeric',
       month: 'long', 
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    })}`, 15, finalY + 20);
+    })}`, 10, finalY + 15);
     
-    // Signature section with box
-    const signatureY = finalY + 30;
-    const signatureX = 140;
-    
-    doc.setDrawColor(46, 125, 50);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(signatureX - 10, signatureY - 5, 60, 45, 2, 2, 'S');
+    // Signature section
+    const signatureY = finalY + 25;
+    const signatureX = 150;
     
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(60, 60, 60);
+    doc.setTextColor(0, 0, 0);
     doc.text(`${new Date().toLocaleDateString('id-ID', { 
       day: 'numeric',
       month: 'long', 
       year: 'numeric'
-    })}`, signatureX + 20, signatureY, { align: 'center' });
+    })}`, signatureX, signatureY);
     
     doc.setFont('helvetica', 'bold');
-    doc.text('YANG BERTANDA TANGAN,', signatureX + 20, signatureY + 7, { align: 'center' });
-    doc.text('KEPALA TPQ', signatureX + 20, signatureY + 13, { align: 'center' });
+    doc.text('Kepala TPQ', signatureX, signatureY + 7);
     
     // Signature line
-    doc.setDrawColor(100, 100, 100);
-    doc.line(signatureX, signatureY + 30, signatureX + 40, signatureY + 30);
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.line(signatureX - 5, signatureY + 25, signatureX + 40, signatureY + 25);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text('( ..................................................... )', signatureX + 20, signatureY + 35, { align: 'center' });
+    doc.setFontSize(9);
+    doc.text('(................................)', signatureX + 17, signatureY + 30, { align: 'center' });
     
     // Page border
-    doc.setDrawColor(46, 125, 50);
-    doc.setLineWidth(1);
-    doc.rect(5, 5, 200, 287, 'S');
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(1.5);
+    doc.rect(7, 7, 196, 283);
     
     // Save PDF
     const fileName = filterMonth 
@@ -735,7 +715,7 @@ export default function AdminFinancesPage() {
 
   const exportToExcel = () => {
     // Prepare data
-    const excelData = finances.map((finance, index) => ({
+    const excelData: any[] = finances.map((finance, index) => ({
       'No': index + 1,
       'Tanggal': new Date(finance.date).toLocaleDateString('id-ID'),
       'Tipe': finance.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
