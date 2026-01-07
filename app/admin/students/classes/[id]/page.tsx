@@ -827,6 +827,7 @@ export default function ClassDetailPage() {
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">No</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Tanggal</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Nama Santri</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Status</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Catatan</th>
@@ -837,17 +838,21 @@ export default function ClassDetailPage() {
                           const studentAtt = attendanceData[student.id];
                           const hasData = studentAtt?.id;
                           
-                          // Map status to display
+                          // Map status to display (including lowercase variants from teacher input)
                           const statusDisplay = {
                             'present': { label: 'Hadir', icon: '✅', bg: 'bg-green-100', text: 'text-green-800' },
                             'Hadir': { label: 'Hadir', icon: '✅', bg: 'bg-green-100', text: 'text-green-800' },
+                            'hadir': { label: 'Hadir', icon: '✅', bg: 'bg-green-100', text: 'text-green-800' },
                             'absent': { label: 'Alfa', icon: '❌', bg: 'bg-red-100', text: 'text-red-800' },
                             'Alpha': { label: 'Alfa', icon: '❌', bg: 'bg-red-100', text: 'text-red-800' },
                             'Alfa': { label: 'Alfa', icon: '❌', bg: 'bg-red-100', text: 'text-red-800' },
+                            'alfa': { label: 'Alfa', icon: '❌', bg: 'bg-red-100', text: 'text-red-800' },
                             'sick': { label: 'Sakit', icon: '🏥', bg: 'bg-yellow-100', text: 'text-yellow-800' },
                             'Sakit': { label: 'Sakit', icon: '🏥', bg: 'bg-yellow-100', text: 'text-yellow-800' },
+                            'sakit': { label: 'Sakit', icon: '🏥', bg: 'bg-yellow-100', text: 'text-yellow-800' },
                             'permission': { label: 'Izin', icon: '📝', bg: 'bg-blue-100', text: 'text-blue-800' },
                             'Izin': { label: 'Izin', icon: '📝', bg: 'bg-blue-100', text: 'text-blue-800' },
+                            'izin': { label: 'Izin', icon: '📝', bg: 'bg-blue-100', text: 'text-blue-800' },
                           };
                           
                           const status = statusDisplay[studentAtt?.status as keyof typeof statusDisplay] || { label: '-', icon: '❓', bg: 'bg-gray-100', text: 'text-gray-800' };
@@ -855,6 +860,9 @@ export default function ClassDetailPage() {
                           return (
                             <tr key={student.id} className={hasData ? 'bg-green-50' : ''}>
                               <td className="px-4 py-3 text-sm text-black">{index + 1}</td>
+                              <td className="px-4 py-3 text-sm text-black">
+                                {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                              </td>
                               <td className="px-4 py-3 text-sm font-medium text-black">
                                 {student.name}
                               </td>

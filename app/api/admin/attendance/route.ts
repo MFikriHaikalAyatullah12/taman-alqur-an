@@ -27,44 +27,48 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
     const studentId = searchParams.get('studentId');
 
+    // Query from the 'attendance' table which is used by teachers to record attendance
+    // This table has recorded_by_teacher_id to track teacher-recorded attendance
     let query = `
       SELECT 
-        sa.id,
-        sa.student_id,
-        sa.class_id,
-        sa.attendance_date,
-        sa.status,
-        sa.notes,
+        a.id,
+        a.student_id,
+        a.class_id,
+        a.attendance_date,
+        a.status,
+        a.notes,
         s.name as student_name,
-        c.name as class_name
-      FROM student_attendance sa
-      JOIN students s ON sa.student_id = s.id
-      LEFT JOIN classes c ON sa.class_id = c.id
-      WHERE sa.admin_id = $1
+        c.name as class_name,
+        t.name as recorded_by_teacher
+      FROM attendance a
+      JOIN students s ON a.student_id = s.id
+      LEFT JOIN classes c ON a.class_id = c.id
+      LEFT JOIN teachers t ON a.recorded_by_teacher_id = t.id
+      WHERE a.admin_id = $1
     `;
     
     const params: any[] = [adminId];
     let paramIndex = 2;
 
     if (classId) {
-      query += ` AND sa.class_id = $${paramIndex}`;
+      query += ` AND a.class_id = $${paramIndex}`;
       params.push(classId);
       paramIndex++;
     }
 
     if (date) {
-      query += ` AND sa.attendance_date = $${paramIndex}`;
+      query += ` AND a.attendance_date = $${paramIndex}`;
       params.push(date);
       paramIndex++;
     }
 
     if (studentId) {
-      query += ` AND sa.student_id = $${paramIndex}`;
+      query += ` AND a.student_id = $${paramIndex}`;
       params.push(studentId);
       paramIndex++;
     }
 
-    query += ` ORDER BY sa.attendance_date DESC, s.name ASC`;
+    query += ` ORDER BY a.attendance_date DESC, s.name ASC`;
 
     const result = await pool.query(query, params);
 

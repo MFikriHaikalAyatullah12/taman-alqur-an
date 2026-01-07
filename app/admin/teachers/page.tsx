@@ -690,7 +690,7 @@ export default function TeachersPage() {
         )}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center">
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -699,20 +699,6 @@ export default function TeachersPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Pengajar</p>
                 <p className="text-2xl font-bold text-blue-600">{teachers.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <span className="text-2xl">✅</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pengajar Aktif</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {teachers.filter(t => t.status === 'Aktif').length}
-                </p>
               </div>
             </div>
           </div>
