@@ -44,45 +44,57 @@ export async function GET(request: NextRequest) {
 
     const teacher = teacherQuery.rows[0];
 
-    // Get attendance data for the month
-    const attendanceQuery = await pool.query(`
-      SELECT 
-        COUNT(*) FILTER (WHERE status = 'hadir') as hadir,
-        COUNT(*) FILTER (WHERE status = 'izin') as izin,
-        COUNT(*) FILTER (WHERE status = 'alfa') as alfa,
-        COUNT(DISTINCT attendance_date) as total_days
-      FROM teacher_attendance
-      WHERE teacher_id = $1 
-        AND admin_id = $2
-        AND TO_CHAR(attendance_date, 'YYYY-MM') = $3
-    `, [teacherId, adminId, month]);
+    // Get classes where this teacher is in charge
+    const classesQuery = await pool.query(
+      'SELECT id, name FROM classes WHERE teacher_in_charge = $1 AND admin_id = $2',
+      [teacher.name, adminId]
+    );
 
-    const attendance = attendanceQuery.rows[0];
+    const classIds = classesQuery.rows.map((c: any) => c.id);
 
-    // Count materials taught in the month from teacher_materials table if exists
-    // Otherwise, estimate from notes field
-    let materiCount = 0;
-    
-    try {
-      const materiQuery = await pool.query(`
-        SELECT COUNT(*) as materi_count
-        FROM teacher_materials
-        WHERE teacher_id = $1 
+    let hadir = 0, izin = 0, alfa = 0, sakit = 0, totalDays = 0;
+
+    // Get teacher attendance from teacher_class_attendance (confirmed by admin)
+    if (classIds.length > 0) {
+      const attendanceQuery = await pool.query(`
+        SELECT 
+          COUNT(*) FILTER (WHERE status = 'hadir') as hadir,
+          COUNT(*) FILTER (WHERE status = 'izin') as izin,
+          COUNT(*) FILTER (WHERE status = 'alfa') as alfa,
+          COUNT(*) FILTER (WHERE status = 'sakit') as sakit,
+          COUNT(DISTINCT attendance_date) as total_days
+        FROM teacher_class_attendance
+        WHERE class_id = ANY($1::int[])
           AND admin_id = $2
-          AND TO_CHAR(material_date, 'YYYY-MM') = $3
-      `, [teacherId, adminId, month]);
-      
-      materiCount = parseInt(materiQuery.rows[0].materi_count) || 0;
-    } catch (error) {
-      // If teacher_materials table doesn't exist, use attendance hadir count as fallback
-      console.log('teacher_materials table not found, using hadir count');
-      materiCount = parseInt(attendance.hadir) || 0;
+          AND TO_CHAR(attendance_date, 'YYYY-MM') = $3
+      `, [classIds, adminId, month]);
+
+      const attendance = attendanceQuery.rows[0];
+      hadir = parseInt(attendance.hadir) || 0;
+      izin = parseInt(attendance.izin) || 0;
+      alfa = parseInt(attendance.alfa) || 0;
+      sakit = parseInt(attendance.sakit) || 0;
+      totalDays = parseInt(attendance.total_days) || 0;
     }
 
-    const hadir = parseInt(attendance.hadir) || 0;
-    const izin = parseInt(attendance.izin) || 0;
-    const alfa = parseInt(attendance.alfa) || 0;
-    const totalDays = parseInt(attendance.total_days) || 0;
+    // Count materials from class_materials (input by teacher via Portal Guru)
+    let materiCount = 0;
+    
+    if (classIds.length > 0) {
+      try {
+        const materiQuery = await pool.query(`
+          SELECT COUNT(*) as materi_count
+          FROM class_materials
+          WHERE class_id = ANY($1::int[])
+            AND TO_CHAR(material_date, 'YYYY-MM') = $2
+        `, [classIds, month]);
+        
+        materiCount = parseInt(materiQuery.rows[0].materi_count) || 0;
+      } catch (error) {
+        console.log('class_materials table error:', error);
+        materiCount = 0;
+      }
+    }
 
     // Calculate attendance percentage
     const attendancePercentage = totalDays > 0 ? (hadir / totalDays) * 100 : 0;
@@ -107,10 +119,12 @@ export async function GET(request: NextRequest) {
       hadir: hadir,
       izin: izin,
       alfa: alfa,
+      sakit: sakit,
       materi_count: materiCount,
       total_days: totalDays,
       attendance_percentage: attendancePercentage,
-      category: category
+      category: category,
+      classes: classesQuery.rows.map((c: any) => c.name)
     };
 
     return NextResponse.json({ 

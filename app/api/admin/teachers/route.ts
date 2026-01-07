@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,11 +60,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const { name, email, phone, specialization, experience_years, education, bio, photo_url } = await request.json();
+    const { name, email, phone, specialization, experience_years, education, bio, photo_url, password } = await request.json();
 
     if (!name || !email) {
       return NextResponse.json({ error: 'Nama dan email wajib diisi' }, { status: 400 });
     }
+
+    if (!password || password.length < 6) {
+      return NextResponse.json({ error: 'Password wajib diisi (minimal 6 karakter)' }, { status: 400 });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Limit bio to 300 characters to prevent database error
     const limitedBio = bio ? bio.substring(0, 300) : '';
@@ -71,10 +79,10 @@ export async function POST(request: NextRequest) {
     // Insert new teacher untuk admin yang login
     const result = await pool.query(`
       INSERT INTO teachers 
-      (admin_id, name, email, phone, specialization, experience_years, education, bio, photo_url, status, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', NOW(), NOW())
+      (admin_id, name, email, phone, specialization, experience_years, education, bio, photo_url, password, status, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', NOW(), NOW())
       RETURNING id, name, email, phone, specialization, experience_years, education, status, photo_url, bio
-    `, [adminId, name, email, phone || '', specialization || '', experience_years || 0, education || '', limitedBio, photo_url || '']);
+    `, [adminId, name, email, phone || '', specialization || '', experience_years || 0, education || '', limitedBio, photo_url || '', hashedPassword]);
 
     return NextResponse.json({ 
       success: true, 

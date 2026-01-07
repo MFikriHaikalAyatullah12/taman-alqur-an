@@ -36,6 +36,33 @@ interface Assessment {
   notes: string;
 }
 
+interface TeacherMaterial {
+  id: number;
+  title: string;
+  description: string;
+  material_date: string;
+  created_at: string;
+  teacher_name?: string;
+}
+
+interface TeacherAttendanceSummary {
+  date: string;
+  hadir: number;
+  izin: number;
+  sakit: number;
+  alfa: number;
+  total: number;
+}
+
+interface TeacherClassAttendance {
+  id: number;
+  class_id: number;
+  teacher_name: string;
+  attendance_date: string;
+  status: string;
+  notes: string;
+}
+
 export default function ClassDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -43,11 +70,15 @@ export default function ClassDetailPage() {
 
   const [classData, setClassData] = useState<Class | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
-  const [activeTab, setActiveTab] = useState<'students' | 'attendance' | 'assessment'>('students');
+  const [activeTab, setActiveTab] = useState<'students' | 'attendance' | 'assessment' | 'teacher-materials'>('students');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceData, setAttendanceData] = useState<{ [key: number]: Attendance }>({});
   const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [teacherMaterials, setTeacherMaterials] = useState<TeacherMaterial[]>([]);
+  const [teacherAttendanceSummary, setTeacherAttendanceSummary] = useState<TeacherAttendanceSummary[]>([]);
+  const [teacherClassAttendance, setTeacherClassAttendance] = useState<{ [key: string]: TeacherClassAttendance }>({});
+  const [savingTeacherAttendance, setSavingTeacherAttendance] = useState<string | null>(null);
   
   // Assessment form
   const [showAssessmentForm, setShowAssessmentForm] = useState(false);
@@ -75,6 +106,10 @@ export default function ClassDetailPage() {
   const [editingAssessmentId, setEditingAssessmentId] = useState<number | null>(null);
   const [editAssessmentData, setEditAssessmentData] = useState<any>(null);
 
+  // Export attendance
+  const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [isExporting, setIsExporting] = useState(false);
+
   useEffect(() => {
     fetchClassData();
     fetchStudents();
@@ -85,6 +120,10 @@ export default function ClassDetailPage() {
       fetchAttendance();
     } else if (activeTab === 'assessment') {
       fetchAssessments();
+    } else if (activeTab === 'teacher-materials') {
+      fetchTeacherMaterials();
+      fetchTeacherAttendanceSummary();
+      fetchTeacherClassAttendance();
     }
   }, [activeTab, selectedDate]);
 
@@ -169,6 +208,138 @@ export default function ClassDetailPage() {
       }
     } catch (error) {
       console.error('Error fetching assessments:', error);
+    }
+  };
+
+  const fetchTeacherMaterials = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/classes/${classId}/teacher-materials`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTeacherMaterials(data.materials || []);
+      }
+    } catch (error) {
+      console.error('Error fetching teacher materials:', error);
+    }
+  };
+
+  const fetchTeacherAttendanceSummary = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/classes/${classId}/teacher-attendance-summary`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTeacherAttendanceSummary(data.summary || []);
+      }
+    } catch (error) {
+      console.error('Error fetching teacher attendance summary:', error);
+    }
+  };
+
+  const fetchTeacherClassAttendance = async () => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/classes/${classId}/teacher-class-attendance`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Convert to map by date
+        const attendanceMap: { [key: string]: TeacherClassAttendance } = {};
+        (data.attendance || []).forEach((att: TeacherClassAttendance) => {
+          const dateKey = att.attendance_date.split('T')[0];
+          attendanceMap[dateKey] = att;
+        });
+        setTeacherClassAttendance(attendanceMap);
+      }
+    } catch (error) {
+      console.error('Error fetching teacher class attendance:', error);
+    }
+  };
+
+  const exportAttendanceToExcel = async () => {
+    setIsExporting(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/classes/${classId}/export-attendance?month=${exportMonth}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const className = classData?.name || 'Kelas';
+        a.download = `Rekap_Absensi_${className}_${exportMonth}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Gagal mengexport data absensi');
+      }
+    } catch (error) {
+      console.error('Error exporting attendance:', error);
+      alert('Terjadi kesalahan saat mengexport data');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const saveTeacherClassAttendance = async (date: string, status: string) => {
+    setSavingTeacherAttendance(date);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/classes/${classId}/teacher-class-attendance`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          attendance_date: date,
+          status: status,
+          notes: ''
+        }),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setTeacherClassAttendance(prev => ({
+          ...prev,
+          [date]: {
+            ...prev[date],
+            attendance_date: date,
+            status: status
+          } as TeacherClassAttendance
+        }));
+        alert('Status kehadiran guru berhasil disimpan');
+      } else {
+        alert('Gagal menyimpan status kehadiran guru');
+      }
+    } catch (error) {
+      console.error('Error saving teacher class attendance:', error);
+      alert('Terjadi kesalahan');
+    } finally {
+      setSavingTeacherAttendance(null);
     }
   };
 
@@ -518,6 +689,16 @@ export default function ClassDetailPage() {
             >
               Penilaian Harian
             </button>
+            <button
+              onClick={() => setActiveTab('teacher-materials')}
+              className={`px-6 py-3 font-medium ${
+                activeTab === 'teacher-materials'
+                  ? 'border-b-2 border-green-500 text-green-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              📚 Materi & Absen Guru
+            </button>
           </div>
 
           <div className="p-6">
@@ -584,7 +765,7 @@ export default function ClassDetailPage() {
             {/* Attendance Tab */}
             {activeTab === 'attendance' && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center flex-wrap gap-4">
                   <div>
                     <label className="block text-sm font-medium text-black mb-2">Pilih Tanggal:</label>
                     <input
@@ -594,64 +775,116 @@ export default function ClassDetailPage() {
                       className="px-3 py-2 border border-gray-300 rounded-lg text-black"
                     />
                   </div>
-                  <button
-                    onClick={saveAllAttendance}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    💾 Simpan Semua
-                  </button>
+                  
+                  {/* Export Section */}
+                  <div className="flex items-end gap-2">
+                    <div>
+                      <label className="block text-sm font-medium text-black mb-2">Export Rekap Bulanan:</label>
+                      <input
+                        type="month"
+                        value={exportMonth}
+                        onChange={(e) => setExportMonth(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+                      />
+                    </div>
+                    <button
+                      onClick={exportAttendanceToExcel}
+                      disabled={isExporting}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isExporting ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Mengexport...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span>Download Excel</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">No</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Nama Santri</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Status</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Catatan</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {students.map((student, index) => (
-                        <tr key={student.id}>
-                          <td className="px-4 py-3 text-sm text-black">{index + 1}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-black">{student.name}</td>
-                          <td className="px-4 py-3">
-                            <select
-                              value={attendanceData[student.id]?.status || 'present'}
-                              onChange={(e) => handleAttendanceChange(student.id, 'status', e.target.value)}
-                              className="px-2 py-1 border border-gray-300 rounded text-black text-sm"
-                            >
-                              <option value="present">Hadir</option>
-                              <option value="absent">Alfa</option>
-                              <option value="sick">Sakit</option>
-                              <option value="permission">Izin</option>
-                            </select>
-                          </td>
-                          <td className="px-4 py-3">
-                            <input
-                              type="text"
-                              value={attendanceData[student.id]?.notes || ''}
-                              onChange={(e) => handleAttendanceChange(student.id, 'notes', e.target.value)}
-                              placeholder="Catatan..."
-                              className="px-2 py-1 border border-gray-300 rounded text-black text-sm w-full"
-                            />
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => saveAttendance(student.id)}
-                              className="text-blue-600 hover:underline text-sm"
-                            >
-                              Simpan
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* Info about data source */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                  <span className="text-blue-600">ℹ️</span>
+                  <div>
+                    <span className="text-sm text-blue-800 font-medium">Data absensi diinput oleh guru</span>
+                    <p className="text-xs text-blue-700 mt-1">Admin hanya bisa melihat data absensi yang diinput guru melalui Portal Guru. Untuk mengubah status, hubungi guru terkait.</p>
+                  </div>
                 </div>
+
+                {Object.keys(attendanceData).length > 0 && Object.values(attendanceData).some(att => att.id) ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">No</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Nama Santri</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">Catatan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {students.map((student, index) => {
+                          const studentAtt = attendanceData[student.id];
+                          const hasData = studentAtt?.id;
+                          
+                          // Map status to display
+                          const statusDisplay = {
+                            'present': { label: 'Hadir', icon: '✅', bg: 'bg-green-100', text: 'text-green-800' },
+                            'Hadir': { label: 'Hadir', icon: '✅', bg: 'bg-green-100', text: 'text-green-800' },
+                            'absent': { label: 'Alfa', icon: '❌', bg: 'bg-red-100', text: 'text-red-800' },
+                            'Alpha': { label: 'Alfa', icon: '❌', bg: 'bg-red-100', text: 'text-red-800' },
+                            'Alfa': { label: 'Alfa', icon: '❌', bg: 'bg-red-100', text: 'text-red-800' },
+                            'sick': { label: 'Sakit', icon: '🏥', bg: 'bg-yellow-100', text: 'text-yellow-800' },
+                            'Sakit': { label: 'Sakit', icon: '🏥', bg: 'bg-yellow-100', text: 'text-yellow-800' },
+                            'permission': { label: 'Izin', icon: '📝', bg: 'bg-blue-100', text: 'text-blue-800' },
+                            'Izin': { label: 'Izin', icon: '📝', bg: 'bg-blue-100', text: 'text-blue-800' },
+                          };
+                          
+                          const status = statusDisplay[studentAtt?.status as keyof typeof statusDisplay] || { label: '-', icon: '❓', bg: 'bg-gray-100', text: 'text-gray-800' };
+                          
+                          return (
+                            <tr key={student.id} className={hasData ? 'bg-green-50' : ''}>
+                              <td className="px-4 py-3 text-sm text-black">{index + 1}</td>
+                              <td className="px-4 py-3 text-sm font-medium text-black">
+                                {student.name}
+                              </td>
+                              <td className="px-4 py-3">
+                                {hasData ? (
+                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.bg} ${status.text}`}>
+                                    {status.icon} {status.label}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 text-sm">Belum diabsen</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">
+                                {studentAtt?.notes || '-'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-500">
+                    <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="font-medium">Belum ada data absensi untuk tanggal ini</p>
+                    <p className="text-sm mt-1">Data akan muncul setelah guru menginput absensi melalui Portal Guru</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -865,6 +1098,197 @@ export default function ClassDetailPage() {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {/* Teacher Materials Tab */}
+            {activeTab === 'teacher-materials' && (
+              <div className="space-y-6">
+                {/* Section: Teacher Submitted Materials */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <span className="mr-2">📚</span>
+                    Materi yang Diinput Guru
+                  </h3>
+                  
+                  {teacherMaterials.length > 0 ? (
+                    <div className="space-y-3">
+                      {teacherMaterials.map((material) => (
+                        <div key={material.id} className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{material.title}</h4>
+                              <p className="text-sm text-gray-600 mt-1">{material.description}</p>
+                            </div>
+                            <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
+                              {new Date(material.material_date).toLocaleDateString('id-ID', { 
+                                day: 'numeric', 
+                                month: 'long', 
+                                year: 'numeric' 
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-500">
+                      <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      <p className="font-medium">Belum ada materi yang diinput guru</p>
+                      <p className="text-sm mt-1">Materi akan muncul setelah guru menginput melalui Portal Guru</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section: Teacher Attendance Summary */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <span className="mr-2">📋</span>
+                    Rekap Absensi Santri (Input Guru)
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Data absensi yang diinput oleh guru melalui Portal Guru. Admin dapat menggunakan data ini untuk menentukan kehadiran guru.
+                  </p>
+                  
+                  {teacherAttendanceSummary.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-green-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Tanggal</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-green-700 uppercase">Hadir</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-blue-700 uppercase">Izin</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-yellow-700 uppercase">Sakit</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-red-700 uppercase">Alfa</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Total</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Status Guru</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {teacherAttendanceSummary.map((summary, index) => {
+                            const dateKey = summary.date.split('T')[0];
+                            const confirmedStatus = teacherClassAttendance[dateKey]?.status;
+                            const isSaving = savingTeacherAttendance === dateKey;
+                            
+                            return (
+                              <tr key={index} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 text-sm text-gray-900">
+                                  {new Date(summary.date).toLocaleDateString('id-ID', { 
+                                    weekday: 'short',
+                                    day: 'numeric', 
+                                    month: 'short', 
+                                    year: 'numeric' 
+                                  })}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                                    {summary.hadir}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                                    {summary.izin}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
+                                    {summary.sakit}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+                                    {summary.alfa}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-center text-sm font-medium text-gray-900">
+                                  {summary.total}
+                                </td>
+                                <td className="px-4 py-3">
+                                  {confirmedStatus ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                        confirmedStatus === 'hadir' ? 'bg-green-500 text-white' :
+                                        confirmedStatus === 'izin' ? 'bg-blue-500 text-white' :
+                                        confirmedStatus === 'sakit' ? 'bg-yellow-500 text-white' :
+                                        'bg-red-500 text-white'
+                                      }`}>
+                                        {confirmedStatus === 'hadir' ? '✓ Hadir' :
+                                         confirmedStatus === 'izin' ? '📝 Izin' :
+                                         confirmedStatus === 'sakit' ? '🏥 Sakit' : '✗ Alfa'}
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          if (confirm('Ubah status kehadiran guru?')) {
+                                            setTeacherClassAttendance(prev => {
+                                              const newState = { ...prev };
+                                              delete newState[dateKey];
+                                              return newState;
+                                            });
+                                          }
+                                        }}
+                                        className="text-gray-400 hover:text-gray-600 text-xs"
+                                        title="Ubah status"
+                                      >
+                                        ✏️
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-center gap-1">
+                                      {isSaving ? (
+                                        <span className="text-gray-500 text-xs">Menyimpan...</span>
+                                      ) : (
+                                        <>
+                                          <button
+                                            onClick={() => saveTeacherClassAttendance(dateKey, 'hadir')}
+                                            className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium transition-colors"
+                                            title="Konfirmasi Hadir"
+                                          >
+                                            Hadir
+                                          </button>
+                                          <button
+                                            onClick={() => saveTeacherClassAttendance(dateKey, 'izin')}
+                                            className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors"
+                                            title="Konfirmasi Izin"
+                                          >
+                                            Izin
+                                          </button>
+                                          <button
+                                            onClick={() => saveTeacherClassAttendance(dateKey, 'sakit')}
+                                            className="px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-xs font-medium transition-colors"
+                                            title="Konfirmasi Sakit"
+                                          >
+                                            Sakit
+                                          </button>
+                                          <button
+                                            onClick={() => saveTeacherClassAttendance(dateKey, 'alfa')}
+                                            className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors"
+                                            title="Konfirmasi Alfa"
+                                          >
+                                            Alfa
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-8 text-center text-gray-500">
+                      <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="font-medium">Belum ada data absensi dari guru</p>
+                      <p className="text-sm mt-1">Data akan muncul setelah guru menginput absensi melalui Portal Guru</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

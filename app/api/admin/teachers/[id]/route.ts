@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const { id } = params;
-    const { name, email, phone, specialization, experience_years, education, bio, photo_url } = await request.json();
+    const { name, email, phone, specialization, experience_years, education, bio, photo_url, new_password } = await request.json();
 
     if (!name || !email) {
       return NextResponse.json({ error: 'Nama dan email wajib diisi' }, { status: 400 });
@@ -31,7 +32,35 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Limit bio to 500 characters to prevent database error
     const limitedBio = bio ? bio.substring(0, 500) : '';
 
-    // Update teacher data untuk admin yang login
+    // If new_password is provided, hash it and update
+    if (new_password) {
+      if (new_password.length < 6) {
+        return NextResponse.json({ error: 'Password minimal 6 karakter' }, { status: 400 });
+      }
+      
+      const hashedPassword = await bcrypt.hash(new_password, 10);
+      
+      // Update teacher data with new password
+      const result = await pool.query(`
+        UPDATE teachers 
+        SET name = $1, email = $2, phone = $3, specialization = $4, 
+            experience_years = $5, education = $6, bio = $7, photo_url = $8, password = $9, updated_at = NOW()
+        WHERE id = $10 AND admin_id = $11
+        RETURNING id, name, email, phone, specialization, experience_years, education, status, photo_url, bio
+      `, [name, email, phone || '', specialization || '', experience_years || 0, education || '', limitedBio, photo_url || '', hashedPassword, id, adminId]);
+
+      if (result.rows.length === 0) {
+        return NextResponse.json({ error: 'Pengajar tidak ditemukan' }, { status: 404 });
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Data pengajar dan password berhasil diupdate',
+        data: result.rows[0]
+      });
+    }
+
+    // Update teacher data without changing password
     const result = await pool.query(`
       UPDATE teachers 
       SET name = $1, email = $2, phone = $3, specialization = $4, 

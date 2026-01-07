@@ -371,12 +371,15 @@ export default function StudentsPage() {
             >
               📥 Export Excel
             </button>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              + Tambah Santri
-            </button>
+          </div>
+        </div>
+
+        {/* Info: Santri ditambahkan oleh guru */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+          <span className="text-blue-500 text-xl">ℹ️</span>
+          <div>
+            <p className="text-blue-800 font-medium">Santri ditambahkan oleh Guru</p>
+            <p className="text-blue-700 text-sm">Data santri ditambahkan oleh guru melalui Portal Guru. Admin dapat melihat, mengelola, atau mengeluarkan santri dari kelas.</p>
           </div>
         </div>
 

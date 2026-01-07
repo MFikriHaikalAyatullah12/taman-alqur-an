@@ -10,6 +10,13 @@ interface Teacher {
   specialization: string;
 }
 
+interface TeacherClass {
+  id: number;
+  name: string;
+  description: string;
+  is_active: boolean;
+}
+
 interface PerformanceData {
   hadir: number;
   izin: number;
@@ -18,6 +25,116 @@ interface PerformanceData {
   total_days: number;
   materiCount: number;
 }
+
+// Password Modal Component
+const PasswordModal = ({ 
+  isOpen, 
+  onClose, 
+  teacher, 
+  onSuccess 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  teacher: Teacher | null;
+  onSuccess: (teacherId: number, classes: TeacherClass[], accessToken: string) => void;
+}) => {
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!teacher) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('teacher_token');
+      const response = await fetch('/api/teacher/verify', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          teacher_id: teacher.id,
+          password: password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        onSuccess(teacher.id, data.classes || [], data.accessToken);
+        setPassword('');
+        onClose();
+      } else {
+        setError(data.error || 'Verifikasi gagal');
+      }
+    } catch (error) {
+      console.error('Error verifying password:', error);
+      setError('Terjadi kesalahan saat verifikasi');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen || !teacher) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Masukkan Password</h2>
+          <p className="text-gray-600 text-sm mt-1">Verifikasi untuk mengakses kelas <strong>{teacher.name}</strong></p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Masukkan password pengajar"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900 placeholder-gray-500"
+              required
+              autoFocus
+            />
+          </div>
+
+          <div className="flex space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-medium transition-colors disabled:opacity-50"
+            >
+              {isLoading ? 'Memverifikasi...' : 'Masuk'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export default function TeacherDashboardPage() {
   const router = useRouter();
@@ -28,6 +145,11 @@ export default function TeacherDashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [isLoading, setIsLoading] = useState(false);
   const [teacherName, setTeacherName] = useState('');
+  
+  // Password verification states
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [teacherToVerify, setTeacherToVerify] = useState<Teacher | null>(null);
+  const [verifiedTeacher, setVerifiedTeacher] = useState<{ id: number; classes: TeacherClass[] } | null>(null);
 
   useEffect(() => {
     // Check if logged in
@@ -114,7 +236,36 @@ export default function TeacherDashboardPage() {
   const handleLogout = () => {
     localStorage.removeItem('teacher_token');
     localStorage.removeItem('teacher_name');
+    localStorage.removeItem('teacher_access_token');
+    localStorage.removeItem('verified_teacher_id');
     router.push('/teacher/login');
+  };
+
+  // Handle teacher click - require password verification
+  const handleTeacherClick = (teacher: Teacher) => {
+    setTeacherToVerify(teacher);
+    setShowPasswordModal(true);
+  };
+
+  // Handle successful password verification
+  const handleVerificationSuccess = (teacherId: number, classes: TeacherClass[], accessToken: string) => {
+    // Store access token
+    localStorage.setItem('teacher_access_token', accessToken);
+    localStorage.setItem('verified_teacher_id', teacherId.toString());
+    
+    // Set verified teacher with their classes
+    setVerifiedTeacher({ id: teacherId, classes });
+    
+    // Find and set the selected teacher
+    const teacher = teachers.find(t => t.id === teacherId);
+    if (teacher) {
+      setSelectedTeacher(teacher);
+    }
+  };
+
+  // Navigate to class management
+  const handleManageClass = (classId: number) => {
+    router.push(`/teacher/class/${classId}`);
   };
 
   const filteredTeachers = teachers.filter(teacher =>
@@ -217,20 +368,79 @@ export default function TeacherDashboardPage() {
 
           {searchQuery && filteredTeachers.length > 0 && (
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTeachers.map((teacher) => (
-                <button
-                  key={teacher.id}
-                  onClick={() => setSelectedTeacher(teacher)}
-                  className={`p-5 rounded-2xl border-2 transition-all text-left transform hover:scale-105 ${
-                    selectedTeacher?.id === teacher.id
-                      ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-lg'
-                      : 'border-gray-200 hover:border-emerald-300 hover:bg-gray-50 shadow-sm'
-                  }`}
-                >
-                  <div className="font-bold text-gray-900 text-lg">{teacher.name}</div>
-                  <div className="text-sm text-gray-600 mt-1">{teacher.specialization || 'Pengajar'}</div>
-                </button>
-              ))}
+              {filteredTeachers.map((teacher) => {
+                const isVerified = verifiedTeacher?.id === teacher.id;
+                
+                return (
+                  <div
+                    key={teacher.id}
+                    className={`p-5 rounded-2xl border-2 transition-all text-left transform ${
+                      selectedTeacher?.id === teacher.id && isVerified
+                        ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-lg'
+                        : 'border-gray-200 hover:border-emerald-300 hover:bg-gray-50 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-gray-900 text-lg">{teacher.name}</div>
+                        <div className="text-sm text-gray-600 mt-1">{teacher.specialization || 'Pengajar'}</div>
+                      </div>
+                      {isVerified ? (
+                        <div className="flex items-center space-x-1">
+                          <span className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </span>
+                        </div>
+                      ) : (
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      )}
+                    </div>
+                    
+                    {isVerified ? (
+                      <div className="mt-4 flex space-x-2">
+                        {/* Ikon Performa */}
+                        <button
+                          onClick={() => setSelectedTeacher(teacher)}
+                          className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl text-sm font-medium hover:from-purple-600 hover:to-indigo-700 transition-all shadow-sm"
+                        >
+                          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          Performa
+                        </button>
+                        {/* Ikon Kelas */}
+                        <button
+                          onClick={() => {
+                            setSelectedTeacher(teacher);
+                            // Scroll to class section
+                            document.getElementById('class-section')?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className="flex-1 flex items-center justify-center px-3 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-700 transition-all shadow-sm"
+                        >
+                          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          Kelas
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleTeacherClick(teacher)}
+                        className="mt-4 w-full flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:from-emerald-100 hover:to-teal-100 hover:text-emerald-700 transition-all"
+                      >
+                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Masuk dengan Password
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -364,11 +574,72 @@ export default function TeacherDashboardPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Class Management Section - Show after verification */}
+                {verifiedTeacher && verifiedTeacher.id === selectedTeacher.id && (
+                  <div id="class-section" className="bg-white rounded-xl shadow-md p-6 mt-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                      <svg className="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      Kelas yang Anda Kelola
+                    </h3>
+                    
+                    {verifiedTeacher.classes.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {verifiedTeacher.classes.map((cls) => (
+                          <div 
+                            key={cls.id} 
+                            className="border-2 border-gray-200 rounded-xl p-4 hover:border-emerald-400 hover:shadow-md transition-all"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-bold text-gray-900">{cls.name}</h4>
+                              <span className={`px-2 py-1 text-xs rounded-full ${cls.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                {cls.is_active ? 'Aktif' : 'Nonaktif'}
+                              </span>
+                            </div>
+                            {cls.description && (
+                              <p className="text-sm text-gray-600 mb-4">{cls.description}</p>
+                            )}
+                            <button
+                              onClick={() => handleManageClass(cls.id)}
+                              className="w-full py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg font-medium hover:from-emerald-600 hover:to-teal-700 transition-all flex items-center justify-center"
+                            >
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Kelola Kelas
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <svg className="w-16 h-16 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <p className="font-semibold">Belum ada kelas yang ditugaskan</p>
+                        <p className="text-sm mt-1">Hubungi admin untuk menambahkan kelas</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </>
         )}
       </div>
+
+      {/* Password Verification Modal */}
+      <PasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => {
+          setShowPasswordModal(false);
+          setTeacherToVerify(null);
+        }}
+        teacher={teacherToVerify}
+        onSuccess={handleVerificationSuccess}
+      />
     </div>
   );
 }

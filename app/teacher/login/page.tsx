@@ -107,7 +107,7 @@ export default function TeacherLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-gray-900 placeholder-gray-500 bg-gray-50 hover:bg-white font-medium"
-                placeholder="gurutpq@gmail.com"
+                placeholder=""
                 required
               />
             </div>
@@ -124,7 +124,7 @@ export default function TeacherLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-gray-900 placeholder-gray-500 bg-gray-50 hover:bg-white font-medium"
-                placeholder="Masukkan password"
+                placeholder=""
                 required
               />
             </div>
